@@ -16,7 +16,28 @@
   /* page's CSS and ours stay out of each other's way.                       */
   /* ---------------------------------------------------------------------- */
   var CSS = "__CSS__";
-  function injectCSS() {
+  /* Where this bundle was loaded from, so fonts resolve on the tools site,
+   * on trlibrary.com, and in local development alike. */
+  var SCRIPT_BASE = (function () {
+    var src = document.currentScript && document.currentScript.src;
+    return src ? src.replace(/dist\/[^\/]*$/, '') : 'https://givingtools.labs.trlibrary.com/';
+  })();
+  GT.base = GT.base || SCRIPT_BASE;
+  var FONTS = [
+    ['Dharma Gothic E', 700, 'normal', 'dharma_type-dharmagothice-bold'], ['Dharma Gothic E', 800, 'normal', 'dharma_type-dharmagothice-exbold'],
+    ['Clearface', 400, 'normal', 'clearfacestd-regular'], ['Clearface', 400, 'italic', 'clearfacestd-italic'], ['Clearface', 500, 'normal', 'clearfacestd-bold'], ['Clearface', 500, 'italic', 'clearfacestd-bolditalic'], ['Clearface', 700, 'normal', 'clearfacestd-heavy'],
+    ['Frutiger', 300, 'normal', 'frutigerltstd-light'], ['Frutiger', 400, 'normal', 'frutigerltstd-regular'], ['Frutiger', 400, 'italic', 'frutigerltstd-regularitalic'], ['Frutiger', 700, 'normal', 'frutigerltstd-bold']
+  ];
+  function injectCSS(loadFonts) {
+    if (loadFonts !== false && !document.getElementById('trpl-gt-fonts')) {
+      var f = document.createElement('style');
+      f.id = 'trpl-gt-fonts';
+      f.textContent = FONTS.map(function (x) { return '@font-face{font-family:"' + x[0] + '";font-weight:' + x[1] + ';font-style:' + x[2] + ';font-display:swap;src:url("' + GT.base + 'fonts/' + x[3] + '.woff2") format("woff2")}'; }).join('') +
+        '@font-face{font-family:"Clearface Fallback";src:local(Georgia);size-adjust:93.1%;ascent-override:101.28%;descent-override:28.95%;line-gap-override:0%}' +
+        '@font-face{font-family:"Dharma Gothic E Fallback";src:local(Arial);size-adjust:60.46%;ascent-override:141.09%;descent-override:37.31%;line-gap-override:0%}' +
+        '@font-face{font-family:"Frutiger Fallback";src:local(Arial);size-adjust:105.7%;ascent-override:88.47%;descent-override:25.5%;line-gap-override:0%}';
+      document.head.appendChild(f);
+    }
     if (document.getElementById('trpl-gt-css')) return;
     var s = document.createElement('style');
     s.id = 'trpl-gt-css';
@@ -275,8 +296,8 @@
     var def = GT.registry[name];
     if (!def || el.getAttribute('data-trpl-mounted')) return;
     el.setAttribute('data-trpl-mounted', '1');
-    injectCSS();
     var opts = readOptions(el);
+    injectCSS(opts.loadFonts !== 'false');
     applyOverrides(opts);
     var root = h('div.gt', { 'data-tool': name, 'data-theme': opts.theme || 'light' });
     if (opts.accent) root.style.setProperty('--trpl-accent', opts.accent);

@@ -154,7 +154,7 @@
     disclaimerExtra: 'The Navigator suggests options to explore; it does not recommend a specific transaction.',
     render: function (root) {
       var a = { goal: null, assets: [], age: null, itemize: null, size: null, nd: null, match: null }, step = 0;
-      var view = h('div.section'); root.appendChild(view);
+      var view = h('div.section'), first = true; root.appendChild(view);
 
       function progress() { return h('div.progress', STEPS.map(function (_, i) { return h('span' + (i <= step ? '.on' : '')); })); }
       function renderStep() {
@@ -166,7 +166,8 @@
         var nextBtn = GT.button(step === STEPS.length - 1 ? 'See my options' : 'Continue', next, 'primary');
         var back = step > 0 ? GT.button('Back', function () { step--; renderStep(); }, 'secondary') : null;
         GT.append(view, [progress(), h('p.eyebrow', 'Question ' + (step + 1) + ' of ' + STEPS.length), h('h3.question', s.q), h('p.help', s.help), ctrl.el, h('div.actions', [back, nextBtn])]);
-        view.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (!first) view.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        first = false;
       }
       function next() {
         var s = STEPS[step];
