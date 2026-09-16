@@ -86,7 +86,26 @@ window.TRPL_TAX = {
   ndCredit: {
     rate: 0.40, minGift: 5000, maxIndividual: 10000, maxJoint: 20000, maxBusiness: 10000, carryforwardYears: 3,
     statute: 'N.D.C.C. § 57-38-01.21', formEndowment: 'Schedule ND-1QEC', formPlanned: 'Schedule ND-1PG',
+    // ND requires the nonprofit's letter confirming the fund qualifies (Schedule line 1), and
+    // adds the federally deducted (or QCD-excluded) portion back to ND taxable income (Form ND-1, line 2).
+    requiresQualificationLetter: true, ndAddBack: true,
+    eligibleContributionCap: { single: 25000, mfj: 50000, hoh: 25000, mfs: 25000 },
     plannedGiftTypes: ['charitable gift annuity', 'deferred charitable gift annuity', 'charitable remainder unitrust', 'charitable remainder annuity trust', 'charitable lead unitrust', 'charitable lead annuity trust', 'pooled income fund', 'charitable life estate', 'paid-up life insurance policy']
+  },
+  // Fillable state forms bundled in /forms (public documents from tax.nd.gov).
+  // The form year follows the tax year of the gift; replace with the new
+  // year's PDF and re-check field names during the annual review.
+  ndForms: {
+    qec: { formYear: 2025, file: 'forms/schedule-nd-1qec-2025.pdf', title: 'Schedule ND-1QEC', source: 'https://www.tax.nd.gov/sites/www/files/documents/forms/individual/2025-iit/28708-schedule-nd-1qec-2025.pdf',
+      fields: { name: 'Taxpayers name', fundName: 'Name 1', fundAddress: 'Address 1', amount: 'Amount 1', l2: 'Line 2', l3: 'Line 3', l4: 'Line 4', l5: 'Line 5', l6: 'Line 6', l7: 'Line 7', l8: 'Line 8', l9: 'Line 9' } },
+    pg: { formYear: 2025, file: 'forms/schedule-nd-1pg-2025.pdf', title: 'Schedule ND-1PG', source: 'https://www.tax.nd.gov/sites/www/files/documents/forms/individual/2025-iit/28705-schedule-nd-1pg-2025.pdf' }
+  },
+  // IRS Form 8283 (Rev. Dec 2025), Section A row A field names (XFA-style AcroForm)
+  irsForms: {
+    f8283: { rev: '2025-12', file: 'forms/irs-f8283-2025-12.pdf', source: 'https://www.irs.gov/pub/irs-pdf/f8283.pdf',
+      fields: { name: 'Form8283[0].Page1[0].f1_1[0]', doneeA: 'Form8283[0].Page1[0].Table_Line1_ColsA-C[0].Row1A[0].f1_5[0]', descA: 'Form8283[0].Page1[0].Table_Line1_ColsA-C[0].Row1A[0].f1_7[0]',
+        dateA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_17[0]', acquiredA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_18[0]', howA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_19[0]',
+        costA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_20[0]', fmvA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_21[0]', methodA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_22[0]' } }
   },
   // ND individual income tax, 2026 (starts from federal taxable income). HOH and
   // MFS use the single / half-joint thresholds here as an approximation.

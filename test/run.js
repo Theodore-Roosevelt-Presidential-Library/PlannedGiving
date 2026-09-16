@@ -5,7 +5,7 @@ const ROOT = path.join(__dirname, '..');
 const ctx = { window: {}, document: { readyState: 'complete', addEventListener() {}, getElementById() { return null; }, createElement() { return { style: {}, setAttribute() {}, appendChild() {}, addEventListener() {}, classList: { add() {} } }; }, head: { appendChild() {} }, querySelectorAll() { return []; } }, navigator: {}, console };
 ctx.window.document = ctx.document;
 vm.createContext(ctx);
-for (const f of ['tax-data.js', 'config.js', 'core.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'src', f), 'utf8').replace('"__CSS__"', '""').replace(/__VERSION__/g, 'test'), ctx);
+for (const f of ['tax-data.js', 'config.js', 'core.js', 'share.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, 'src', f), 'utf8').replace('"__CSS__"', '""').replace(/__VERSION__/g, 'test'), ctx);
 const GT = ctx.window.TRPLGivingTools, T = ctx.window.TRPL_TAX;
 
 let fails = 0;

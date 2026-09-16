@@ -8,9 +8,26 @@
     intro: 'Thousands of employers match their employees’ charitable gifts — some 2:1 or more, and many include retirees and spouses. See what your gift could become and how to claim the match.',
     disclaimer: true,
     disclaimerExtra: 'Matching programs are set by each employer and change often; the impact shown is an estimate. Membership dues and event tickets are usually not matched.',
-    render: function (root) {
+    render: function (root, GT, opts) {
       var o = ORG();
-      var s = { gift: 250, ratio: '1', cap: 0, monthly: false };
+      /* Optional: embed the Library's Double the Donation employer search.
+       * Pass data-dtd-key="<public API key>" on the placeholder (the same key
+       * the plugin on trlibrary.com/matching-gifts uses). Nothing loads unless
+       * a key is provided. */
+      var dtdKey = opts.dtdKey || o.doubleTheDonationKey || '';
+      var lookup = null;
+      if (dtdKey) {
+        lookup = GT.section('Search for your employer', [
+          h('p.help', 'Type your company name to see whether it matches gifts, the ratio and limits, and how to submit. Powered by Double the Donation.'),
+          h('div', { id: 'dd-container' })
+        ]);
+        window.DDCONF = window.DDCONF || { API_KEY: dtdKey };
+        if (!document.getElementById('trpl-dtd-plugin')) {
+          var sc = document.createElement('script'); sc.id = 'trpl-dtd-plugin'; sc.async = true; sc.src = 'https://doublethedonation.com/api/js/ddplugin.js';
+          document.head.appendChild(sc);
+        }
+      }
+      var s = GT.state('matching', { gift: 250, ratio: '1', cap: 0, monthly: false });
       var out = h('div.section');
       var ctl = {
         gift: GT.moneyInput({ value: s.gift, onChange: function (v) { s.gift = v; calc(); } }),
@@ -18,6 +35,7 @@
         cap: GT.moneyInput({ value: '', placeholder: 'Optional', onChange: function (v) { s.cap = v; calc(); } }),
         monthly: GT.checkbox('This is a monthly gift — show the annual total', { onChange: function (v) { s.monthly = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       ctl.cap.input.value = '';
       GT.append(root, [
         h('div.grid', [
@@ -26,7 +44,8 @@
           GT.field('Annual match limit per employee, if you know it', ctl.cap)
         ]),
         h('div', [ctl.monthly.el]),
-        out
+        out,
+        lookup
       ]);
       function calc() {
         GT.clear(out);

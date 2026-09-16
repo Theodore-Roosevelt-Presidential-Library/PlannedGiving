@@ -1,5 +1,7 @@
 # Annual tax-figure review
 
+> The step-by-step procedure, including what to search for and how to verify form fields, is in the repo's `CLAUDE.md`. This file is the field-by-field checklist the GitHub Action pastes into the review issue.
+
 Every number the calculators use lives in **`src/tax-data.js`**. This checklist keeps it current. Budget about an hour once a year, plus five minutes a month for the §7520 rate if you want the life-income illustrator to be exact.
 
 A GitHub Action (`.github/workflows/tax-review.yml`) opens an issue with this checklist on **November 1** (the IRS usually publishes next year's figures in late October) and again on **January 5** as a backstop.
@@ -32,6 +34,8 @@ Update each value in `src/tax-data.js`, then bump `taxYear`, `lastReviewed`, and
 - [ ] `ndBrackets` — North Dakota income tax brackets (indexed annually; tax.nd.gov)
 - [ ] `stateCreditRule` — federal 15% de minimis rule for state credits (Treas. Reg. § 1.170A-1(h)(3)); rarely changes
 - [ ] `stateEstateTax` / `stateInheritanceTax` — states add, repeal, and index these every year
+- [ ] `ndForms` — download the new year's Schedule ND-1QEC and ND-1PG from tax.nd.gov into `forms/`, update `formYear`/`file`/`source`, and re-check the field names (`pdftk forms/<file> dump_data_fields` or pypdf `get_fields()`) against `ndForms.qec.fields`
+- [ ] `irsForms.f8283` — check irs.gov for a newer revision of Form 8283; if the revision changed, re-download into `forms/` and re-verify the field names
 - [ ] `lawNote` — the sentence printed in every tool's footer
 - [ ] `sources` — list what you used
 

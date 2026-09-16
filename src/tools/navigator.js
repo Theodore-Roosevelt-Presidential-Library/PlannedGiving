@@ -29,7 +29,7 @@
       ['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']] },
     { key: 'match', q: 'Does your employer match charitable gifts?', help: 'Many companies match employee gifts 1:1 or better. Retirees are sometimes eligible too.', type: 'radio', options: [
       ['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']] }
-  ];
+  ].filter(function (st) { return st.key !== 'nd' || (window.TRPL_ORG.features && window.TRPL_ORG.features.ndCredit); });
 
   function recommend(a) {
     var o = ORG(), t = T(), u = o.urls, tools = u.tools;
@@ -121,7 +121,7 @@
       qs.push('What appraisal and paperwork does the IRS require for a gift of property, and what is the deduction based on?');
     }
 
-    if ((a.nd === 'yes' || a.nd === 'unsure') && (big || a.size === 'm' || a.goal === 'income')) {
+    if (o.features && o.features.ndCredit && (a.nd === 'yes' || a.nd === 'unsure') && (big || a.size === 'm' || a.goal === 'income')) {
       var nd = t.ndCredit;
       recs.push({ score: a.nd === 'yes' ? 88 : 58, title: 'Claim North Dakota’s 40% charitable giving tax credit', tag: a.nd === 'yes' ? 'Strong fit' : 'If you pay ND tax',
         why: 'Gifts of ' + money(nd.minGift) + ' or more to the Library’s endowment — and planned gifts like gift annuities or remainder trusts — earn a North Dakota income tax credit of ' + pctFmt(nd.rate) + ' of the gift, up to ' + money(nd.maxIndividual) + ' per person or ' + money(nd.maxJoint) + ' for couples filing jointly, with a three-year carryforward. Combined with federal benefits, a large gift can cost less than half its face value.',
@@ -150,10 +150,10 @@
 
   GT.register('navigator', {
     title: 'Find the right way to give',
-    intro: 'Answer seven quick questions and we’ll point you to the giving options that fit your situation — plus the questions worth asking your advisor.',
+    intro: 'Answer a few quick questions and we’ll point you to the giving options that fit your situation — plus the questions worth asking your advisor.',
     disclaimerExtra: 'The Navigator suggests options to explore; it does not recommend a specific transaction.',
     render: function (root) {
-      var a = { goal: null, assets: [], age: null, itemize: null, size: null, nd: null, match: null }, step = 0;
+      var a = GT.state('navigator', { goal: '', assets: [], age: '', itemize: '', size: '', nd: '', match: '', done: false }), step = 0; this.getState = function () { return a; };
       var view = h('div.section'), first = true; root.appendChild(view);
 
       function progress() { return h('div.progress', STEPS.map(function (_, i) { return h('span' + (i <= step ? '.on' : '')); })); }
@@ -173,7 +173,7 @@
         var s = STEPS[step];
         if (s.type === 'radio' && !a[s.key]) return;
         if (s.type === 'checks' && !a.assets.length) { a.assets = ['cash']; }
-        if (step < STEPS.length - 1) { step++; renderStep(); } else renderResults();
+        if (step < STEPS.length - 1) { step++; renderStep(); } else { a.done = true; renderResults(); }
       }
       function renderResults() {
         GT.clear(view);
@@ -190,11 +190,11 @@
           }),
           GT.advisorQuestions(r.qs),
           GT.contactLine(),
-          h('div.actions', [GT.button('Start over', function () { a = { goal: null, assets: [], age: null, itemize: null, size: null, nd: null, match: null }; step = 0; renderStep(); }, 'secondary')])
+          h('div.actions', [GT.button('Start over', function () { Object.assign(a, { goal: '', assets: [], age: '', itemize: '', size: '', nd: '', match: '', done: false }); step = 0; renderStep(); }, 'secondary')])
         ]);
         view.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
-      renderStep();
+      if (a.done && a.goal) renderResults(); else renderStep();
     }
   });
 })(window.TRPLGivingTools);

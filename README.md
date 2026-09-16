@@ -21,6 +21,10 @@ Every tool is one `<script>` tag. No framework, no build step on the host page, 
 | Life-income illustrator | `dist/lifeincome.js` | Educational CGA / CRUT / CRAT illustrations (ACGA rates, §7520 rate). |
 | Matching gift impact | `dist/matching.js` | Gift × match ratio, how to claim. |
 | Monthly giving calculator | `dist/monthly.js` | Monthly → yearly / multi-year impact, links to the monthly form. |
+| Year-end deadlines | `dist/deadlines.js` | When each gift type counts, start-by dates, what to do. |
+| Gift acknowledgment letters (staff) | `dist/acknowledgments.js` | IRS-compliant acknowledgment letters by gift type; ND endowment qualification letter. |
+
+Every donor-facing tool also offers **Download advisor summary (PDF)**, **Print**, and **Copy link to this scenario** (inputs encoded in the URL, e.g. `?qcd.age=75&qcd.gift=20000`). Paperwork generators: QCD custodian letter (qcd), broker transfer letter and IRS Form 8283 draft (stock), pre-filled Schedule ND-1QEC (ndcredit), signable Heritage Society statement of intent (bequest, beneficiary, intent). All PDFs are built client-side with pdf-lib; nothing is uploaded.
 
 `dist/all.js` bundles everything for pages that use several tools.
 
@@ -40,6 +44,8 @@ Tools cross-link to one another (the Navigator points to calculators, the ND cre
 | Tool | trlibrary.com page | Pages mirror |
 |---|---|---|
 | navigator | `/support/tools/navigator` | `support/tools/navigator/` |
+| deadlines | `/support/tools/deadlines` | `support/tools/deadlines/` |
+| acknowledgments (staff) | not published on trlibrary.com | `support/tools/acknowledgments/` |
 | ndcredit | `/support/tools/ndcredit` | `support/tools/ndcredit/` |
 | qcd, stock, bunching, daf, bequest, beneficiary, intent, estate, lifeincome, matching, monthly | `/support/tools/<name>` | `support/tools/<name>/` |
 
@@ -57,8 +63,11 @@ build.js            ← concatenates → dist/<tool>.js (+ all.js, manifest.json
 gen-pages.js        ← writes index.html and support/tools/<name>/{index,embed}.html
 test/render.js      ← headless render of every tool, fails on console errors, screenshots
 test/run.js         ← unit checks on the calculator math
-docs/               ← EMBED.md, DRUPAL.md, TAX-REVIEW.md
+docs/               ← EMBED.md, DRUPAL.md, TAX-REVIEW.md, FORKING.md
+CLAUDE.md           ← maintainer playbook: annual tax-year rollover, repo rules
 fonts/              ← the Library's licensed webfonts (Dharma Gothic E, Clearface, Frutiger)
+forms/              ← fillable ND-1QEC, ND-1PG and IRS Form 8283 that the tools pre-fill in the browser
+vendor/pdf-lib.min.js ← MIT-licensed PDF library, loaded on demand only when a donor asks for the worksheet
 ```
 
 ## Develop
@@ -81,9 +90,13 @@ All figures live in `src/tax-data.js`. The IRS publishes next year's inflation a
 - **Not advice.** Every tool says so, plainly, and ends with questions to bring to the donor's own advisor.
 - **Bequests first.** More than nine in ten realized planned gifts are bequests and beneficiary designations; those tools get the most care.
 - **National audience.** Federal rules first; state estate and inheritance taxes flagged by state; no assumption the donor lives in North Dakota.
-- **Nothing tracked.** The tools make no network requests and store nothing. Analytics belong to the host page.
+- **Nothing tracked.** The tools make no network requests beyond loading their own fonts and, on demand, the PDF library and blank state form from the same host. Pre-filled forms are generated in the browser; nothing a donor types is sent anywhere. Analytics belong to the host page.
 - **Accessible.** Real form controls, labels, 44px targets, keyboard-navigable, works at phone width, respects the host's fonts.
+
+## Forking
+
+Any nonprofit can use this. Everything organization-specific is in `src/config.js` (plus your own fonts and palette); `features.ndCredit: false` removes the North Dakota-specific pieces. Step-by-step in [docs/FORKING.md](docs/FORKING.md). `CLAUDE.md` is the playbook for the annual tax-year rollover, written for an AI assistant or a human maintainer.
 
 ## License
 
-MIT. Other nonprofits are welcome to fork this; change `src/config.js` and rebuild.
+MIT. The Library's licensed webfonts in `fonts/` are **not** covered by the license — replace them in a fork.

@@ -5,6 +5,7 @@
   var h = GT.h, ORG = GT.ORG;
 
   GT.register('intent', {
+    share: false,
     title: 'Tell us about your legacy gift',
     intro: 'Have you included the Library in your will, trust, or as a beneficiary of an account? Letting us know lets us thank you, make sure we understand your wishes, and welcome you to the Heritage Society. Any details you share stay confidential and are never binding.',
     disclaimerExtra: 'Sharing your intentions does not create a legal obligation and can be revised at any time.',
@@ -14,7 +15,8 @@
       if (url && opts.embedForm !== 'false') {
         GT.append(root, [
           h('iframe', { src: url, title: 'Legacy gift intention form', style: { width: '100%', minHeight: (opts.formHeight || 900) + 'px', border: 0, borderRadius: '10px', background: '#fff' }, loading: 'lazy' }),
-          h('p.help', { html: 'Prefer email? Write to <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a>.' })
+          h('p.help', { html: 'Prefer email? Write to <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a>.' }),
+          GT.intentStatementSection()
         ]);
         return;
       }
@@ -38,6 +40,7 @@
         GT.field('Notes (optional)', { el: share, input: share }),
         h('div.actions', [send, GT.copyButton(body, 'Copy message instead')]),
         GT.callout('info', 'This opens a message in your own email program addressed to <b>' + o.contactEmail + '</b>. Nothing is sent until you press send.'),
+        GT.intentStatementSection(function () { return { will: 'a gift in my/our will or trust', beneficiary: 'a beneficiary designation', other: 'a planned gift', considering: 'a planned gift under consideration' }[s.type]; }, function () { return share.value; }),
         GT.contactLine()
       ]);
     }

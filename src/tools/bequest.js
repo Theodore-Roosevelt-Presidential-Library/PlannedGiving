@@ -10,12 +10,12 @@
     disclaimerExtra: 'Sample language only. Your attorney should adapt it to your state’s law and your overall plan. The Foundation does not draft or review estate documents.',
     render: function (root) {
       var o = ORG(), t = T();
-      var s = { kind: 'pct', pct: 10, amount: 25000, asset: '', purpose: 'unrestricted', program: '', contingent: false, vehicle: 'will' };
+      var s = GT.state('bequest', { kind: 'pct', pct: 10, amount: 25000, asset: '', purpose: 'unrestricted', program: '', contingent: false, vehicle: 'will' }); this.getState = function () { return s; };
       var textOut = h('div.textout', { 'aria-live': 'polite' });
       var pctCtl = GT.numberInput({ min: 1, max: 100, value: s.pct, suffix: '%', onChange: function (v) { s.pct = v; gen(); } });
       var amtCtl = GT.moneyInput({ value: s.amount, onChange: function (v) { s.amount = v; gen(); } });
-      var assetCtl = GT.numberInput({ value: '', placeholder: 'e.g. 200 shares of XYZ stock; my cabin at …' }); assetCtl.input.type = 'text'; assetCtl.input.addEventListener('input', function () { s.asset = assetCtl.input.value; gen(); });
-      var programCtl = GT.numberInput({ value: '', placeholder: 'e.g. education programs for students and teachers' }); programCtl.input.type = 'text'; programCtl.input.addEventListener('input', function () { s.program = programCtl.input.value; gen(); });
+      var assetCtl = GT.numberInput({ value: s.asset, placeholder: 'e.g. 200 shares of XYZ stock; my cabin at …' }); assetCtl.input.type = 'text'; assetCtl.input.addEventListener('input', function () { s.asset = assetCtl.input.value; gen(); });
+      var programCtl = GT.numberInput({ value: s.program, placeholder: 'e.g. education programs for students and teachers' }); programCtl.input.type = 'text'; programCtl.input.addEventListener('input', function () { s.program = programCtl.input.value; gen(); });
       var pctField = GT.field('Percentage', pctCtl, 'Percentages keep pace with your estate and are easy for family to understand. Many donors choose 5% or 10%.');
       var amtField = GT.field('Dollar amount', amtCtl);
       var assetField = GT.field('Describe the asset', assetCtl);
@@ -31,7 +31,7 @@
         purpose: GT.radios({ stacked: true, options: [
           ['unrestricted', '<b>Wherever the need is greatest</b> — the most useful kind of gift (recommended)'],
           ['program', '<b>A specific program or purpose</b>']], value: s.purpose, onChange: function (v) { s.purpose = v; show(); gen(); } }),
-        contingent: GT.checkbox('Make this a <b>contingent</b> gift — the Library receives it only if my named beneficiaries do not survive me', { value: false, onChange: function (v) { s.contingent = v; gen(); } })
+        contingent: GT.checkbox('Make this a <b>contingent</b> gift — the Library receives it only if my named beneficiaries do not survive me', { value: s.contingent, onChange: function (v) { s.contingent = v; gen(); } })
       };
       function show() {
         pctField.style.display = s.kind === 'pct' || s.kind === 'residue' ? '' : 'none';
@@ -82,6 +82,7 @@
         h('div.infocard', [h('b', 'The details your attorney will need'), h('span', 'Legal name: ' + o.name), h('span', 'Tax ID (EIN): ' + o.ein), h('span', 'Address: ' + o.address), h('span', 'Status: ' + o.taxStatus)]),
         GT.callout('info', '<p><b>Three things worth knowing.</b> A gift in your will is fully deductible from your taxable estate. It is revocable — you can change it at any time. And you don’t need a new will to add it: a short amendment (a “codicil”) usually does the job.</p>'),
         GT.intentCTA(),
+        GT.intentStatementSection(function () { return s.vehicle === 'trust' ? 'a provision in my/our living trust' : 'a bequest in my/our will'; }, text),
         GT.advisorQuestions([
           'Should this be a percentage, a fixed amount, or a share of the residue, given the rest of my plan?',
           'Would leaving retirement-account assets to the Library and other assets to family reduce the taxes my heirs pay?',

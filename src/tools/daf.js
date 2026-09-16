@@ -19,12 +19,12 @@
         ['community', 'Another community foundation'],
         ['other', 'Another sponsor']
       ];
-      var s = { sponsor: 'fidelity', amount: 1000, purpose: 'general', recurring: false };
+      var s = GT.state('daf', { sponsor: 'fidelity', amount: 1000, purpose: 'general', recurring: false, hItemize: 'no', hAsset: 'stock', hHorizon: 'multi' }); this.getState = function () { return s; };
       var steps = h('div.section'), rec = h('div.textout');
       var sp = GT.select({ options: SPONSORS.map(function (x) { return [x[0], x[1]]; }), value: s.sponsor, onChange: function (v) { s.sponsor = v; show(); } });
       var amt = GT.moneyInput({ value: s.amount, onChange: function (v) { s.amount = v; gen(); } });
-      var purpose = GT.radios({ options: [['general', 'Where needed most'], ['heritage', 'In honor / memory of someone'], ['program', 'A specific program']], value: 'general', onChange: function (v) { s.purpose = v; gen(); } });
-      var recurring = GT.checkbox('Make this a recurring grant (annual or monthly)', { onChange: function (v) { s.recurring = v; gen(); } });
+      var purpose = GT.radios({ options: [['general', 'Where needed most'], ['heritage', 'In honor / memory of someone'], ['program', 'A specific program']], value: s.purpose, onChange: function (v) { s.purpose = v; gen(); } });
+      var recurring = GT.checkbox('Make this a recurring grant (annual or monthly)', { value: s.recurring, onChange: function (v) { s.recurring = v; gen(); } });
       var honoree = GT.numberInput({ value: '', placeholder: 'Name of honoree or program' }); honoree.input.type = 'text'; honoree.input.addEventListener('input', gen);
 
       function show() {
@@ -47,10 +47,10 @@
 
       // DAF vs direct helper
       var helperOut = h('div.section');
-      var hs = { itemize: 'no', asset: 'stock', horizon: 'multi' };
-      var hi = GT.radios({ options: [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], value: 'no', onChange: function (v) { hs.itemize = v; helper(); } });
-      var ha = GT.radios({ options: [['cash', 'Cash'], ['stock', 'Appreciated stock'], ['ira', 'IRA (age 70½+)']], value: 'stock', onChange: function (v) { hs.asset = v; helper(); } });
-      var hh = GT.radios({ options: [['once', 'Give once, now'], ['multi', 'Give over several years']], value: 'multi', onChange: function (v) { hs.horizon = v; helper(); } });
+      var hs = { itemize: s.hItemize, asset: s.hAsset, horizon: s.hHorizon };
+      var hi = GT.radios({ options: [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], value: hs.itemize, onChange: function (v) { hs.itemize = s.hItemize = v; helper(); } });
+      var ha = GT.radios({ options: [['cash', 'Cash'], ['stock', 'Appreciated stock'], ['ira', 'IRA (age 70½+)']], value: hs.asset, onChange: function (v) { hs.asset = s.hAsset = v; helper(); } });
+      var hh = GT.radios({ options: [['once', 'Give once, now'], ['multi', 'Give over several years']], value: hs.horizon, onChange: function (v) { hs.horizon = s.hHorizon = v; helper(); } });
       function helper() {
         GT.clear(helperOut);
         var msg, tone = 'info';
@@ -74,7 +74,7 @@
           h('div.grid', [GT.field('Do you itemize?', hi), GT.field('What would you give?', ha), GT.field('Timing', hh)]),
           helperOut
         ]),
-        GT.callout('info', '<p><b>Two more DAF ideas.</b> Name the Library as a <b>successor beneficiary</b> of your fund so your giving continues. And if you keep a DAF at a community foundation such as the North Dakota Community Foundation, ask about recurring grants — set once, delivered every year.</p>'),
+        GT.callout('info', '<p><b>Two more DAF ideas.</b> Name the Library as a <b>successor beneficiary</b> of your fund so your giving continues. ' + (o.communityFoundation ? 'And if you keep a DAF at a community foundation such as the ' + o.communityFoundation + ', ask about recurring grants — set once, delivered every year.' : '') + '</p>'),
         GT.advisorQuestions([
           'Should I fund my DAF with appreciated securities rather than cash?',
           'How much should I contribute this year to make itemizing worthwhile?',

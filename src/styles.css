@@ -174,3 +174,5 @@
   .trpl-gt .trpl-actions .trpl-btn { flex: 1 1 auto; }
 }
 @media print { .trpl-gt .trpl-btn, .trpl-gt .trpl-actions { display: none; } .trpl-gt { border: 0; } }
+.trpl-gt .trpl-sharebar { border-top: 1px dashed var(--trpl-line); padding-top: 16px; display: grid; gap: 10px; }
+.trpl-gt .trpl-sharebar .trpl-eyebrow { color: var(--trpl-muted); }

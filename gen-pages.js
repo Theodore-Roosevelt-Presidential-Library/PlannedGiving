@@ -6,9 +6,13 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = __dirname;
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'dist/manifest.json'), 'utf8'));
-const BASE = 'https://givingtools.labs.trlibrary.com/';
+// Organization config (read from src/config.js without a browser)
+const ORG = (() => { const w = {}; new Function('window', fs.readFileSync(path.join(ROOT, 'src/config.js'), 'utf8'))(w); return w.TRPL_ORG; })();
+const BASE = ORG.urls.tools.replace(/\/?$/, '/');
+const SITE = ORG.site;
 
-const ORDER = ['navigator', 'ndcredit', 'qcd', 'stock', 'bunching', 'daf', 'bequest', 'beneficiary', 'intent', 'estate', 'lifeincome', 'matching', 'monthly'];
+const ORDER = ['navigator', 'ndcredit', 'qcd', 'stock', 'bunching', 'daf', 'bequest', 'beneficiary', 'intent', 'estate', 'lifeincome', 'matching', 'monthly', 'deadlines'];
+const STAFF = ['acknowledgments'];
 const BLURB = {
   navigator: 'Seven questions that point a visitor to the right giving method, with reasons, links, and questions for their advisor. Built for the top of the Support page.',
   ndcredit: 'North Dakota’s 40% state credit for endowment and planned gifts: credit size, how much a donor can use, the federal-deduction interplay, and net cost.',
@@ -22,18 +26,21 @@ const BLURB = {
   estate: 'Federal estate tax exposure, how a charitable bequest changes it, and a flag for the 18 states with their own death taxes.',
   lifeincome: 'Educational illustrations of a gift annuity, unitrust, and annuity trust using ACGA rates and the current §7520 rate.',
   matching: 'What a gift becomes with an employer match, and how to claim it.',
-  monthly: 'A slider that turns a monthly amount into yearly and multi-year impact and links to the monthly giving form.'
+  monthly: 'A slider that turns a monthly amount into yearly and multi-year impact and links to the monthly giving form.',
+  deadlines: 'Pick a gift type and see when it counts, the start-by date for this year, and what to do — checks, stock, QCDs, DAFs, wires, property.',
+  acknowledgments: 'Staff tool: IRS-compliant acknowledgment letters for every gift type, plus the North Dakota endowment qualification letter donors attach to Schedule ND-1QEC.'
 };
-const tools = ORDER.map(n => manifest.tools.find(t => t.name === n)).filter(Boolean);
+const tools = ORDER.filter(n => n !== 'ndcredit' || ORG.features.ndCredit).map(n => manifest.tools.find(t => t.name === n)).filter(Boolean);
+const staffTools = ORG.features.staffTools ? STAFF.map(n => manifest.tools.find(t => t.name === n)).filter(Boolean) : [];
 
 const head = (title, extra = '', fontBase = 'fonts') => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} — Giving Tools · Theodore Roosevelt Presidential Library</title>
+<title>${title} — ${SITE.title} · ${SITE.tagline}</title>
 <meta name="robots" content="index,follow">
-<meta name="description" content="${title}. Free planned-giving and tax-smart giving tools from the Theodore Roosevelt Presidential Library Foundation.">
+<meta name="description" content="${title}. Free planned-giving and tax-smart giving tools from the ${ORG.name}.">
 <style>
   @font-face{font-family:"Dharma Gothic E";font-weight:700;src:url(${fontBase}/dharma_type-dharmagothice-bold.woff2) format("woff2");font-display:swap}
   @font-face{font-family:"Clearface";font-weight:400;src:url(${fontBase}/clearfacestd-regular.woff2) format("woff2");font-display:swap}
@@ -77,27 +84,36 @@ const head = (title, extra = '', fontBase = 'fonts') => `<!doctype html>
 <body>`;
 
 const siteHeader = `<header class="site"><div class="wrap">
-  <a href="${BASE}" class="brand">Giving Tools<small>Theodore Roosevelt Presidential Library</small></a>
-  <nav class="site"><a href="https://www.trlibrary.com/support">Ways to give</a><a href="https://www.trlibrary.com/heritage-society">Heritage Society</a><a href="https://github.com/Theodore-Roosevelt-Presidential-Library/PlannedGiving">GitHub</a><a class="cta" href="https://form-renderer-app.donorperfect.io/give/theodore-roosevelt-presidential-library-foundation/donate-page">Donate</a></nav>
+  <a href="${BASE}" class="brand">${SITE.title}<small>${SITE.tagline}</small></a>
+  <nav class="site">${SITE.nav.map(n => `<a href="${n[1]}">${n[0]}</a>`).join('')}<a href="${SITE.repoUrl}">GitHub</a><a class="cta" href="${ORG.urls.donate}">Donate</a></nav>
 </div></header>`;
 
-const footer = `<footer><p>Theodore Roosevelt Presidential Library Foundation · 501(c)(3) · EIN 47-1324043 · 1401 East Calgary Ave, Suite 210, Bismarck, ND 58503 · <a href="mailto:giving@trlibrary.com">giving@trlibrary.com</a></p>
-<p>The Foundation is not a tax, legal, or financial advisor. These tools provide general education and estimates only; please consult your own advisors. Federal figures reflect tax year ${manifest.taxYear}; reviewed annually. Open source under the MIT license.</p></footer>`;
+const footer = `<footer><p>${ORG.name} · ${ORG.taxStatus} · EIN ${ORG.ein} · ${ORG.address} · <a href="mailto:${ORG.contactEmail}">${ORG.contactEmail}</a></p>
+<p>${ORG.name} is not a tax, legal, or financial advisor. These tools provide general education and estimates only; please consult your own advisors. Federal figures reflect tax year ${manifest.taxYear}; reviewed annually. Open source under the MIT license.</p></footer>`;
 
 /* ---------- index.html ---------- */
 let index = head('Planned Giving Tools') + siteHeader + `<div class="wrap">
-<h1>Tools for tax-smart giving</h1>
-<p class="lede">Free, open-source calculators and guides that help supporters of the Theodore Roosevelt Presidential Library — and their advisors — find the smartest way to give. Every tool drops onto any web page with one line of JavaScript.</p>
+<h1>${SITE.heading}</h1>
+<p class="lede">${SITE.lede}</p>
 <div class="grid">
 ${tools.map(t => `<div class="card"><h3>${t.title}</h3><p>${BLURB[t.name] || ''}</p><div class="links"><a class="btn primary" href="support/tools/${t.name}/">Open tool</a><a class="btn" href="#embed-${t.name}">Embed code</a></div></div>`).join('\n')}
 </div>
+
+<h2>For Library staff</h2>
+<p>Internal drafting aids that share the same figures and legal details. Not linked from donor-facing pages.</p>
+<div class="grid">
+${staffTools.map(t => `<div class="card"><h3>${t.title}</h3><p>${BLURB[t.name] || ''}</p><div class="links"><a class="btn primary" href="support/tools/${t.name}/">Open tool</a></div></div>`).join('\n')}
+</div>
+
+<h2>Every tool can be saved and shared</h2>
+<p>Each tool ends with three buttons: <b>Download advisor summary (PDF)</b> — a one-page recap of what was entered, what the tool showed, the notes, and the questions to bring to an advisor, with the Library’s legal details; <b>Print</b>; and <b>Copy link to this scenario</b>, which puts the inputs in the URL so a donor can send their exact scenario to an advisor — or development can send a prospect a link that opens a calculator already filled in (for example <code>?qcd.age=75&amp;qcd.gift=20000</code>). Several tools also produce paperwork: a QCD request letter, a broker transfer letter, a draft IRS Form 8283, a pre-filled Schedule ND-1QEC, and a signable Heritage Society statement of intent. Everything is generated in the browser; nothing a donor types is sent anywhere.</p>
 
 <h2>How to embed</h2>
 <p>Each tool is a single JavaScript file that carries its own styles, the current tax figures, and the Foundation’s details. Paste one snippet where you want the tool to appear. Several tools can share a page.</p>
 <pre><code>&lt;div data-trpl-tool="navigator"&gt;&lt;/div&gt;
 &lt;script src="${BASE}dist/navigator.js" async&gt;&lt;/script&gt;</code></pre>
-<p>Options go on the <code>div</code> as data attributes: <code>data-theme="dark"</code>, <code>data-accent="#1B4532"</code>, <code>data-hide-header="true"</code>, <code>data-intent-form-url="https://…"</code> (DonorPerfect intent form), <code>data-contact-email</code>, <code>data-contact-name</code>, <code>data-contact-phone</code>. Full reference in <a href="https://github.com/Theodore-Roosevelt-Presidential-Library/PlannedGiving/blob/main/docs/EMBED.md">docs/EMBED.md</a>.</p>
-<div class="note"><b>Tax figures are reviewed every year.</b> All rates and limits live in one file (<code>src/tax-data.js</code>) stamped with the tax year and review date, and every tool prints that stamp in its footer. A scheduled reminder opens a review issue each November when the IRS publishes the next year’s figures. See <a href="https://github.com/Theodore-Roosevelt-Presidential-Library/PlannedGiving/blob/main/docs/TAX-REVIEW.md">docs/TAX-REVIEW.md</a>.</div>
+<p>Options go on the <code>div</code> as data attributes: <code>data-theme="dark"</code>, <code>data-accent="#1B4532"</code>, <code>data-hide-header="true"</code>, <code>data-intent-form-url="https://…"</code> (DonorPerfect intent form), <code>data-contact-email</code>, <code>data-contact-name</code>, <code>data-contact-phone</code>. Full reference in <a href="${SITE.repoUrl}/blob/main/docs/EMBED.md">docs/EMBED.md</a>.</p>
+<div class="note"><b>Tax figures are reviewed every year.</b> All rates and limits live in one file (<code>src/tax-data.js</code>) stamped with the tax year and review date, and every tool prints that stamp in its footer. A scheduled reminder opens a review issue each November when the IRS publishes the next year’s figures. See <a href="${SITE.repoUrl}/blob/main/docs/TAX-REVIEW.md">docs/TAX-REVIEW.md</a>.</div>
 
 <h2>Embed snippets</h2>
 ${tools.map(t => `<h3 class="snippet" id="embed-${t.name}">${t.title}</h3>
@@ -119,7 +135,7 @@ fs.writeFileSync(path.join(ROOT, 'index.html'), index);
  * relative tool base here; on trlibrary.com the config default applies. */
 const TOOLS_DIR = path.join(ROOT, 'support', 'tools');
 fs.mkdirSync(TOOLS_DIR, { recursive: true });
-for (const t of tools) {
+for (const t of tools.concat(staffTools)) {
   const dir = path.join(TOOLS_DIR, t.name);
   fs.mkdirSync(dir, { recursive: true });
   const page = head(t.title, '', '../../../fonts') + siteHeader + `<div class="wrap tool-page">

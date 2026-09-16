@@ -10,10 +10,10 @@
     disclaimerExtra: 'Monthly gifts are charged to your card or bank account on the same day each month and can be changed or cancelled at any time. Cash gifts to the Library qualify for the ' + money(T().charitable.nonItemizer.single) + ' / ' + money(T().charitable.nonItemizer.mfj) + ' non-itemizer deduction in ' + T().taxYear + '.',
     render: function (root) {
       var o = ORG(), t = T();
-      var s = { amt: 25 };
+      var s = GT.state('monthly', { amt: 25 }); this.getState = function () { return s; };
       var out = h('div.section');
       var presets = [10, 25, 50, 100, 250];
-      var slider = h('input.range', { type: 'range', min: 5, max: 500, step: 5, value: s.amt, 'aria-label': 'Monthly gift amount' });
+      var slider = h('input.range', { type: 'range', min: 5, max: 500, step: 5, value: GT.clamp(s.amt, 5, 500), 'aria-label': 'Monthly gift amount' });
       var custom = GT.moneyInput({ value: s.amt, onChange: function (v) { s.amt = Math.max(1, v); slider.value = GT.clamp(s.amt, 5, 500); calc(); } });
       slider.addEventListener('input', function () { s.amt = +slider.value; custom.set(s.amt); calc(); });
       var chips = h('div.radios', presets.map(function (p) { return GT.button(money(p) + '/mo', function () { s.amt = p; slider.value = p; custom.set(p); calc(); }, 'secondary'); }));

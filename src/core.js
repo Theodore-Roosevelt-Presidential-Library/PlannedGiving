@@ -20,22 +20,15 @@
    * on trlibrary.com, and in local development alike. */
   var SCRIPT_BASE = (function () {
     var src = document.currentScript && document.currentScript.src;
-    return src ? src.replace(/dist\/[^\/]*$/, '') : 'https://givingtools.labs.trlibrary.com/';
+    return src ? src.replace(/dist\/[^\/]*$/, '') : ((window.TRPL_ORG && window.TRPL_ORG.urls.tools) || '/');
   })();
   GT.base = GT.base || SCRIPT_BASE;
-  var FONTS = [
-    ['Dharma Gothic E', 700, 'normal', 'dharma_type-dharmagothice-bold'], ['Dharma Gothic E', 800, 'normal', 'dharma_type-dharmagothice-exbold'],
-    ['Clearface', 400, 'normal', 'clearfacestd-regular'], ['Clearface', 400, 'italic', 'clearfacestd-italic'], ['Clearface', 500, 'normal', 'clearfacestd-bold'], ['Clearface', 500, 'italic', 'clearfacestd-bolditalic'], ['Clearface', 700, 'normal', 'clearfacestd-heavy'],
-    ['Frutiger', 300, 'normal', 'frutigerltstd-light'], ['Frutiger', 400, 'normal', 'frutigerltstd-regular'], ['Frutiger', 400, 'italic', 'frutigerltstd-regularitalic'], ['Frutiger', 700, 'normal', 'frutigerltstd-bold']
-  ];
+  var FONTS = (window.TRPL_ORG && window.TRPL_ORG.fonts) || [];
   function injectCSS(loadFonts) {
-    if (loadFonts !== false && !document.getElementById('trpl-gt-fonts')) {
+    if (loadFonts !== false && FONTS.length && !document.getElementById('trpl-gt-fonts')) {
       var f = document.createElement('style');
       f.id = 'trpl-gt-fonts';
-      f.textContent = FONTS.map(function (x) { return '@font-face{font-family:"' + x[0] + '";font-weight:' + x[1] + ';font-style:' + x[2] + ';font-display:swap;src:url("' + GT.base + 'fonts/' + x[3] + '.woff2") format("woff2")}'; }).join('') +
-        '@font-face{font-family:"Clearface Fallback";src:local(Georgia);size-adjust:93.1%;ascent-override:101.28%;descent-override:28.95%;line-gap-override:0%}' +
-        '@font-face{font-family:"Dharma Gothic E Fallback";src:local(Arial);size-adjust:60.46%;ascent-override:141.09%;descent-override:37.31%;line-gap-override:0%}' +
-        '@font-face{font-family:"Frutiger Fallback";src:local(Arial);size-adjust:105.7%;ascent-override:88.47%;descent-override:25.5%;line-gap-override:0%}';
+      f.textContent = FONTS.map(function (x) { return '@font-face{font-family:"' + x[0] + '";font-weight:' + x[1] + ';font-style:' + x[2] + ';font-display:swap;src:url("' + GT.base + 'fonts/' + x[3] + '.woff2") format("woff2")}'; }).join('') + ((window.TRPL_ORG && window.TRPL_ORG.fontFallbackCss) || '');
       document.head.appendChild(f);
     }
     if (document.getElementById('trpl-gt-css')) return;
@@ -156,7 +149,7 @@
     function get() { return num(inp.value); }
     inp.addEventListener('input', function () { opts.onChange && opts.onChange(get()); });
     inp.addEventListener('blur', function () { if (inp.value !== '') inp.value = money(get()).slice(1); });
-    return { el: wrap, input: inp, get: get, set: function (v) { inp.value = money(v).slice(1); } };
+    return { el: wrap, input: inp, type: 'number', get: get, set: function (v) { inp.value = money(v).slice(1); } };
   }
   function numberInput(opts) {
     opts = opts || {};
@@ -164,7 +157,7 @@
     var wrap = opts.suffix ? h('div.money', [inp, h('span.suffix', opts.suffix)]) : inp;
     function get() { var v = num(inp.value, opts.value || 0); return opts.min != null ? clamp(v, opts.min, opts.max == null ? Infinity : opts.max) : v; }
     inp.addEventListener('input', function () { opts.onChange && opts.onChange(get()); });
-    return { el: wrap, input: inp, get: get, set: function (v) { inp.value = v; } };
+    return { el: wrap, input: inp, type: inp.type === 'text' ? 'text' : 'number', get: get, set: function (v) { inp.value = v; } };
   }
   function percentInput(opts) {
     opts = opts || {};
@@ -172,12 +165,12 @@
     var wrap = h('div.money', [inp, h('span.suffix', '%')]);
     function get() { return num(inp.value) / 100; }
     inp.addEventListener('input', function () { opts.onChange && opts.onChange(get()); });
-    return { el: wrap, input: inp, get: get, set: function (v) { inp.value = +(v * 100).toFixed(2); } };
+    return { el: wrap, input: inp, type: 'number', get: get, set: function (v) { inp.value = +(v * 100).toFixed(2); } };
   }
   function select(opts) {
     var sel = h('select.input', opts.options.map(function (o) { return h('option', { value: o[0], selected: o[0] === opts.value }, o[1]); }));
     sel.addEventListener('change', function () { opts.onChange && opts.onChange(sel.value); });
-    return { el: sel, input: sel, get: function () { return sel.value; }, set: function (v) { sel.value = v; } };
+    return { el: sel, input: sel, type: 'string', get: function () { return sel.value; }, set: function (v) { sel.value = v; } };
   }
   function radios(opts) {
     var name = 'trpl-r' + (++uid), value = opts.value;
@@ -188,7 +181,7 @@
       wrap.appendChild(h('label.radio', [r, h('span', { html: o[1] })]));
       return r;
     });
-    return { el: wrap, input: inputs[0] || wrap, get: function () { return value; }, set: function (v) { value = v; inputs.forEach(function (r) { r.checked = r.value === v; }); } };
+    return { el: wrap, input: inputs[0] || wrap, type: 'string', get: function () { return value; }, set: function (v) { value = v; inputs.forEach(function (r) { r.checked = r.value === v; }); } };
   }
   function checks(opts) {
     var value = opts.value || [];
@@ -209,7 +202,7 @@
     var c = h('input', { type: 'checkbox', checked: !!opts.value });
     c.addEventListener('change', function () { opts.onChange && opts.onChange(c.checked); });
     var el = h('label.radio.single', [c, h('span', { html: labelText })]);
-    return { el: el, input: c, get: function () { return c.checked; }, set: function (v) { c.checked = !!v; } };
+    return { el: el, input: c, type: 'bool', get: function () { return c.checked; }, set: function (v) { c.checked = !!v; } };
   }
   var FILING = [['single', 'Single'], ['mfj', 'Married filing jointly'], ['hoh', 'Head of household'], ['mfs', 'Married filing separately']];
   var BRACKETS = function () { return T().marginalRates.map(function (r) { return [String(r), pct(r, 0) + ' bracket']; }); };
@@ -310,7 +303,10 @@
     root.appendChild(head);
     var body = h('div.body');
     root.appendChild(body);
-    try { def.render(body, GT, opts); }
+    try {
+      def.render(body, GT, opts);
+      if (def.share !== false && GT.shareBar) body.appendChild(GT.shareBar(name, root, def.title, def.getState));
+    }
     catch (e) { body.appendChild(callout('warn', 'This tool could not load. Please refresh the page or contact ' + ORG().contactEmail + '.')); if (window.console) console.error('[TRPL Giving Tools]', name, e); }
     if (def.disclaimer !== false) root.appendChild(disclaimer(def.disclaimerExtra));
     GT.mounted.push({ name: name, el: el });

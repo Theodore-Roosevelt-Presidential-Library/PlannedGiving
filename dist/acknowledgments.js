@@ -825,92 +825,93 @@ window.TRPL_ORG = {
   Object.assign(GT, { pdfSafe: pdfSafe, letterBlocks: letterBlocks, state: state, applyState: applyState, shareUrl: shareUrl, shareButton: shareButton, loadPdfLib: loadPdfLib, downloadBytes: downloadBytes, stripHtml: stripHtml, makePDF: makePDF, fillForm: fillForm, draftStamp: draftStamp, summaryFromDOM: summaryFromDOM, advisorPDF: advisorPDF, shareBar: shareBar, intentStatement: intentStatement, intentStatementSection: intentStatementSection });
 })(window.TRPLGivingTools);
 
-/* @tool Donor-Advised Fund Grant Guide
- * Sponsor-specific steps for recommending a grant, a copyable grant
- * recommendation, and a DAF vs. direct-gift decision helper. */
+/* @tool Gift Acknowledgment Letters (staff)
+ * Internal tool for the development team: produces IRS-compliant
+ * acknowledgment letters for each gift type (cash, quid pro quo, stock, QCD,
+ * DAF grant, estate distribution, matching gift) and the North Dakota
+ * endowment qualification letter donors need for Schedule ND-1QEC. */
 (function (GT) {
   var h = GT.h, T = GT.T, ORG = GT.ORG, money = GT.money;
 
-  GT.register('daf', {
-    title: 'Give from your donor-advised fund',
-    intro: 'Already have a donor-advised fund? A grant to the Library takes a few minutes. Pick your sponsor for steps, or use the helper to decide whether a DAF makes sense for you.',
-    disclaimerExtra: 'Grants from a donor-advised fund cannot be used to pay for membership benefits, event tickets, or anything of value to you. You already received your deduction when you funded the DAF, so a grant is not deductible again.',
+  GT.register('acknowledgments', {
+    staff: true,
+    title: 'Gift acknowledgment letters',
+    intro: 'For Library staff. Choose the gift type, fill in the details, and download a letter that says what the IRS requires — and nothing it forbids. Publication 1771 rules are built in.',
+    disclaimerExtra: 'Internal drafting aid. Letters should go out on letterhead under the signer’s review; the development office remains responsible for substantiation and for the accuracy of dates, amounts, and fund names.',
     render: function (root) {
       var o = ORG(), t = T();
-      var SPONSORS = [
-        ['fidelity', 'Fidelity Charitable', 'https://www.fidelitycharitable.org/'],
-        ['schwab', 'DAFgiving360 (formerly Schwab Charitable)', 'https://www.dafgiving360.org/'],
-        ['vanguard', 'Vanguard Charitable', 'https://www.vanguardcharitable.org/'],
-        ['npt', 'National Philanthropic Trust', 'https://www.nptrust.org/'],
-        ['ndcf', 'North Dakota Community Foundation', 'https://www.ndcf.net/'],
-        ['community', 'Another community foundation'],
-        ['other', 'Another sponsor']
-      ];
-      var s = GT.state('daf', { sponsor: 'fidelity', amount: 1000, purpose: 'general', recurring: false, hItemize: 'no', hAsset: 'stock', hHorizon: 'multi' }); this.getState = function () { return s; };
-      var steps = h('div.section'), rec = h('div.textout');
-      var sp = GT.select({ options: SPONSORS.map(function (x) { return [x[0], x[1]]; }), value: s.sponsor, onChange: function (v) { s.sponsor = v; show(); } });
-      var amt = GT.moneyInput({ value: s.amount, onChange: function (v) { s.amount = v; gen(); } });
-      var purpose = GT.radios({ options: [['general', 'Where needed most'], ['heritage', 'In honor / memory of someone'], ['program', 'A specific program']], value: s.purpose, onChange: function (v) { s.purpose = v; gen(); } });
-      var recurring = GT.checkbox('Make this a recurring grant (annual or monthly)', { value: s.recurring, onChange: function (v) { s.recurring = v; gen(); } });
-      var honoree = GT.numberInput({ value: '', placeholder: 'Name of honoree or program' }); honoree.input.type = 'text'; honoree.input.addEventListener('input', gen);
+      var s = GT.state('acknowledgments', { kind: 'cash', amount: 1000, benefits: 0, purpose: '' }); this.getState = function () { return s; };
+      var KINDS = [
+        ['cash', 'Cash, check, or card — no benefits received'],
+        ['quid', 'Gift with benefits (event tickets, membership perks, auction)'],
+        ['stock', 'Securities (stock, mutual fund shares)'],
+        ['qcd', 'IRA qualified charitable distribution'],
+        ['daf', 'Donor-advised fund grant'],
+        ['estate', 'Estate or trust distribution'],
+        ['match', 'Employer matching gift'],
+        (o.features && o.features.ndCredit) ? ['ndletter', 'North Dakota endowment qualification letter (for Schedule ND-1QEC)'] : null
+      ].filter(Boolean);
+      function txt(ph, type) { var i = GT.numberInput({ value: '', placeholder: ph }); i.input.type = type || 'text'; return i; }
+      var ctl = {
+        kind: GT.radios({ stacked: true, options: KINDS, value: s.kind, onChange: function (v) { s.kind = v; toggle(); } }),
+        amount: GT.moneyInput({ value: s.amount, onChange: function (v) { s.amount = v; } }),
+        benefits: GT.moneyInput({ value: s.benefits, onChange: function (v) { s.benefits = v; } })
+      };
+      var donor = txt('Full legal name(s) of donor'), addr = txt('Street, city, state, ZIP'), salutation = txt('e.g. Dear Mr. and Mrs. Roosevelt'), date = txt('', 'date'),
+          desc = txt('e.g. 100 shares of Apple Inc. common stock'), benefitsDesc = txt('e.g. two tickets to the Founders’ Dinner'), purpose = txt('e.g. the Library’s endowment; education programs'),
+          signer = txt('e.g. Jane Doe'), signerTitle = txt('e.g. Chief Development Officer'), extra = txt('e.g. the ' + o.name + ' Endowment Fund'), thirdParty = txt('e.g. Fidelity Charitable; the Estate of John Doe; Acme Corp.');
+      GT.applyState(ctl, s);
+      var amountF = GT.field('Gift amount', ctl.amount), benefitsF = GT.field('Fair market value of benefits provided', ctl.benefits, 'Required when the donor received something in return. The deductible amount is the gift minus this value.'),
+          descF = GT.field('Description of securities', desc, 'Number of shares and issuer. Do <b>not</b> state a dollar value — the donor’s appraisal or broker sets that.'),
+          benefitsDescF = GT.field('Describe the benefits', benefitsDesc), fundF = GT.field('Name of the qualified endowment fund', extra), thirdF = GT.field('Sponsor / estate / employer name', thirdParty);
+      function toggle() {
+        var k = s.kind;
+        amountF.style.display = (k === 'stock' || k === 'ndletter') ? 'none' : '';
+        benefitsF.style.display = k === 'quid' ? '' : 'none'; benefitsDescF.style.display = k === 'quid' ? '' : 'none';
+        descF.style.display = k === 'stock' ? '' : 'none';
+        fundF.style.display = k === 'ndletter' ? '' : 'none';
+        thirdF.style.display = (k === 'daf' || k === 'estate' || k === 'match') ? '' : 'none';
+      }
+      var status = h('p.help'), preview = h('div.textout');
 
-      function show() {
-        GT.clear(steps);
-        var spn = SPONSORS.filter(function (x) { return x[0] === s.sponsor; })[0];
-        GT.append(steps, [
-          h('ol.steps', [
-            h('li', { html: spn[2] ? 'Log in at <a href="' + spn[2] + '" target="_blank" rel="noopener">' + spn[1] + '</a> and choose “Grant” or “Recommend a grant.”' : 'Log in to your sponsor’s donor portal and choose “Recommend a grant.”' }),
-            h('li', { html: 'Search for <b>' + o.name + '</b>. If several results appear, match the EIN <b>' + o.ein + '</b> and the ' + o.city + ', ' + o.state + ' address.' }),
-            GT.li('Enter the amount and any purpose or honoree in the memo (copy the text below). Choose whether to share your name and address — please do, so we can thank you.'),
-            h('li', { html: 'Submit. Most sponsors send the check or ACH within one to two weeks. Email <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a> if you would like us to confirm receipt.' })
-          ])
-        ]);
+      function fmtDate(v) { return v ? new Date(v + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '[date]'; }
+      function body() {
+        var k = s.kind, name = donor.input.value || '[Donor name]', d = fmtDate(date.input.value), amt = money(s.amount), sal = salutation.input.value || ('Dear ' + name + ','), p = purpose.input.value;
+        var noGoods = 'No goods or services were provided in exchange for this contribution.';
+        var forP = p ? ' designated for ' + p : '';
+        var paras = [];
+        if (k === 'cash') paras = ['Thank you for your generous gift of ' + amt + forP + ', received on ' + d + '. ' + o.missionLine, noGoods, 'Please keep this letter as your receipt for tax purposes.'];
+        else if (k === 'quid') { var ded = Math.max(0, s.amount - s.benefits); paras = ['Thank you for your payment of ' + amt + forP + ', received on ' + d + '.', 'In return for your contribution, you received ' + (benefitsDesc.input.value || '[description of benefits]') + ', which the Library values at ' + money(s.benefits) + '. Under federal tax law, the amount of your contribution that is deductible is limited to the excess of your payment over the value of the goods and services provided: ' + money(ded) + '.', 'Please keep this letter as your receipt.']; }
+        else if (k === 'stock') paras = ['Thank you for your generous gift of ' + (desc.input.value || '[number of shares and issuer]') + forP + ', received in the Library’s brokerage account on ' + d + '.', noGoods, 'As required by the IRS, this letter describes the securities but does not state their value; your deduction is based on the fair market value on the date of the gift, and gifts over $500 are reported on Form 8283. Please keep this letter with your records.'];
+        else if (k === 'qcd') paras = ['Thank you for your gift of ' + amt + forP + ', received on ' + d + ' as a distribution from your IRA. We understand you intend this to be a qualified charitable distribution under Internal Revenue Code § 408(d)(8).', 'The ' + o.name + ' is a public charity described in § 170(b)(1)(A) and is eligible to receive qualified charitable distributions. ' + noGoods, 'Please keep this letter with your records; your IRA custodian will report the distribution on Form 1099-R.'];
+        else if (k === 'daf') paras = ['Thank you for recommending a grant of ' + amt + forP + ' from your donor-advised fund at ' + (thirdParty.input.value || '[sponsor]') + ', received on ' + d + '. Your continued support means a great deal to the Library.', 'Because this grant came from a donor-advised fund, no additional tax deduction is available to you and this letter is not a tax receipt; your deduction was taken when you contributed to the fund. No goods or services were provided to you in connection with this grant, and the Library has not used it to satisfy any pledge or provide any benefit to you.'];
+        else if (k === 'estate') paras = ['On behalf of the ' + o.name + ', thank you for the distribution of ' + amt + forP + ' from ' + (thirdParty.input.value || '[the Estate or Trust]') + ', received on ' + d + '. We are honored that ' + name + ' chose to leave a lasting legacy at the Library.', noGoods + ' The Library is a public charity described in Internal Revenue Code § 170(b)(1)(A); this letter may serve as the receipt for the estate’s or trust’s charitable deduction under § 2055 or § 642(c).'];
+        else if (k === 'match') paras = ['Thank you for the matching gift of ' + amt + ' from ' + (thirdParty.input.value || '[employer]') + ', received on ' + d + ', in recognition of the generosity of ' + name + '. ' + noGoods, 'The employee’s own gift has been acknowledged separately; this letter serves as the receipt for the corporate match.'];
+        else if (k === 'ndletter') paras = ['This letter confirms that the ' + o.name + ' is a nonprofit corporation incorporated in and with a physical presence in ' + o.stateName + ', exempt from federal income tax under Internal Revenue Code § 501(c)(3) and eligible to receive contributions deductible under § 170(c).', 'It further confirms that the ' + (extra.input.value || '[name of endowment fund]') + ', to which your contribution of ' + amt + ' was made on ' + d + ', is a qualified endowment fund within the meaning of N.D.C.C. § 57-38-01.21: a permanent, irrevocable fund held by the Foundation, comprised of cash, securities, mutual funds, or other investment assets, established for a charitable purpose, and from which only the income generated by, or the increase in value of, the contributed assets may be expended.', 'This letter is provided to support your claim of the North Dakota charitable giving tax credit on Schedule ND-1QEC. Please attach it to your return as the schedule requires. ' + noGoods];
+        var sign = (signer.input.value || '[Signer]') + '\n' + (signerTitle.input.value || '[Title]') + '\n' + o.name;
+        return { salutation: sal, paras: paras, sign: sign, name: name, address: addr.input.value };
       }
-      function recText() {
-        var memo = s.purpose === 'general' ? 'For the Library’s general charitable purposes.' : s.purpose === 'heritage' ? 'In honor of ' + (honoree.input.value || '[name]') + '.' : 'For ' + (honoree.input.value || '[program]') + ', or where the need is greatest if that program is fully funded.';
-        return 'Grant recommendation\nRecipient: ' + o.name + '\nEIN: ' + o.ein + '\nAddress: ' + o.address + '\nAmount: ' + money(s.amount) + (s.recurring ? ' (recurring)' : '') + '\nPurpose: ' + memo + '\nDonor acknowledgment: please share my name and address with the recipient.';
-      }
-      function gen() { rec.textContent = recText(); }
-
-      // DAF vs direct helper
-      var helperOut = h('div.section');
-      var hs = { itemize: s.hItemize, asset: s.hAsset, horizon: s.hHorizon };
-      var hi = GT.radios({ options: [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], value: hs.itemize, onChange: function (v) { hs.itemize = s.hItemize = v; helper(); } });
-      var ha = GT.radios({ options: [['cash', 'Cash'], ['stock', 'Appreciated stock'], ['ira', 'IRA (age 70½+)']], value: hs.asset, onChange: function (v) { hs.asset = s.hAsset = v; helper(); } });
-      var hh = GT.radios({ options: [['once', 'Give once, now'], ['multi', 'Give over several years']], value: hs.horizon, onChange: function (v) { hs.horizon = s.hHorizon = v; helper(); } });
-      function helper() {
-        GT.clear(helperOut);
-        var msg, tone = 'info';
-        if (hs.asset === 'ira') { msg = '<b>Skip the DAF.</b> Qualified charitable distributions from an IRA cannot go to a donor-advised fund — send the QCD straight to the Library instead. It keeps the amount out of your income entirely.'; tone = 'warn'; }
-        else if (hs.horizon === 'once' && hs.itemize !== 'no') { msg = '<b>Give directly.</b> For a one-time gift while itemizing, a direct gift to the Library is simplest and equally deductible' + (hs.asset === 'stock' ? ' — transfer the shares to the Library and skip the middle step.' : '.'); }
-        else if (hs.horizon === 'once' && hs.itemize === 'no') { msg = '<b>Give directly</b> — and note that in ' + t.taxYear + ' non-itemizers may deduct up to ' + money(t.charitable.nonItemizer.single) + ' (' + money(t.charitable.nonItemizer.mfj) + ' joint) of <i>cash</i> gifts made directly to charities. That deduction does not apply to DAF contributions.'; }
-        else if (hs.itemize === 'no' || hs.itemize === 'unsure') { msg = '<b>A DAF may help.</b> Fund it with several years of giving' + (hs.asset === 'stock' ? ' in appreciated stock' : '') + ' in one year so you can itemize that year (“bunching”), then grant to the Library annually. Compare the numbers with the bunching calculator.'; tone = 'good'; }
-        else { msg = '<b>Either works.</b> You itemize and plan to give over time. A DAF adds convenience (one tax receipt, easy stock gifts, grants on your schedule) at the cost of sponsor fees and a step between you and the Library. Direct gifts each year are just as deductible and let the Library put your gift to work immediately.'; }
-        GT.append(helperOut, [GT.callout(tone, '<p>' + msg + '</p>'), h('div.actions', [hs.asset === 'ira' ? GT.linkBtn('IRA giving calculator', GT.toolUrl('qcd'), 'primary') : (hs.itemize === 'no' && hs.horizon === 'multi') ? GT.linkBtn('Bunching calculator', GT.toolUrl('bunching'), 'primary') : GT.linkBtn('Give now', o.urls.donate, 'primary'), hs.asset === 'stock' ? GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary') : null])]);
-      }
+      function asText() { var b = body(); return [new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), '', b.name + (b.address ? '\n' + b.address : ''), '', b.salutation, '', b.paras.join('\n\n'), '', 'With gratitude,', '', '', b.sign].join('\n'); }
+      function refresh() { preview.textContent = asText(); }
+      [donor, addr, salutation, date, desc, benefitsDesc, purpose, signer, signerTitle, extra, thirdParty].forEach(function (i) { i.input.addEventListener('input', refresh); });
+      ctl.amount.input.addEventListener('input', refresh); ctl.benefits.input.addEventListener('input', refresh);
+      ctl.kind.el.addEventListener('change', refresh);
+      var pdfBtn = GT.button('Download letter (PDF)', function () {
+        var b = body(); pdfBtn.disabled = true; status.textContent = 'Preparing…';
+        GT.makePDF({ title: s.kind === 'ndletter' ? 'Qualified endowment fund confirmation' : 'Thank you for your gift', subtitle: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+          blocks: GT.letterBlocks(b.name + (b.address ? '\n' + b.address : '') + '\n\n' + b.salutation + '\n\n' + b.paras.join('\n\n') + '\n\nWith gratitude,\n\n\n' + b.sign), disclaimer: false })
+          .then(function (bytes) { GT.downloadBytes(bytes, 'acknowledgment-' + s.kind + '.pdf'); status.textContent = 'Downloaded. Print on letterhead or attach to email.'; })
+          .catch(function (e) { status.textContent = 'Could not build the PDF (' + e.message + ').'; }).then(function () { pdfBtn.disabled = false; });
+      }, 'primary');
 
       GT.append(root, [
-        GT.section('Recommend a grant', [
-          h('div.grid', [GT.field('Your fund sponsor', sp), GT.field('Grant amount', amt), GT.field('Purpose', purpose), GT.field('Honoree or program (optional)', honoree)]),
-          h('div', [recurring.el]),
-          steps,
-          rec,
-          h('div.actions', [GT.copyButton(recText, 'Copy grant details'), GT.linkBtn('Donor-advised fund page', o.urls.daf, 'secondary')])
-        ]),
-        GT.section('Should you use a DAF at all?', [
-          h('div.grid', [GT.field('Do you itemize?', hi), GT.field('What would you give?', ha), GT.field('Timing', hh)]),
-          helperOut
-        ]),
-        GT.callout('info', '<p><b>Two more DAF ideas.</b> Name the Library as a <b>successor beneficiary</b> of your fund so your giving continues. ' + (o.communityFoundation ? 'And if you keep a DAF at a community foundation such as the ' + o.communityFoundation + ', ask about recurring grants — set once, delivered every year.' : '') + '</p>'),
-        GT.advisorQuestions([
-          'Should I fund my DAF with appreciated securities rather than cash?',
-          'How much should I contribute this year to make itemizing worthwhile?',
-          'What are my sponsor’s fees and minimum grant size, and are there better options?',
-          'Should the Library be named as a successor beneficiary of my fund?'
-        ]),
-        GT.contactLine()
+        GT.callout('warn', '<b>Staff tool.</b> Not intended for donors. The rules baked in: acknowledgments for gifts of $250+ must state whether goods or services were provided; “quid pro quo” letters are required for payments over $75 and must give a good-faith value of the benefits; stock letters describe but never value the shares; DAF letters must not offer a deduction; QCD letters confirm no benefits were provided.'),
+        GT.field('Gift type', ctl.kind),
+        h('div.grid', [GT.field('Donor name(s)', donor), GT.field('Address', addr), GT.field('Salutation', salutation), GT.field('Date received', date), amountF, benefitsF, benefitsDescF, descF, thirdF, fundF, GT.field('Purpose or designation (optional)', purpose), GT.field('Signer', signer), GT.field('Signer title', signerTitle)]),
+        GT.section('Letter', [preview, h('div.actions', [pdfBtn, GT.copyButton(asText, 'Copy letter text')]), status]),
+        GT.callout('info', 'Reference: IRS Publication 1771, <i>Charitable Contributions — Substantiation and Disclosure Requirements</i>; N.D.C.C. § 57-38-01.21 for the endowment letter. Confirm the endowment fund’s qualified status with counsel before issuing the North Dakota letter.')
       ]);
-      show(); gen(); helper();
+      toggle(); refresh();
     }
   });
 })(window.TRPLGivingTools);

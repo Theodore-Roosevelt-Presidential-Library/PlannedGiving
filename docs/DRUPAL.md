@@ -19,6 +19,9 @@ The tools are designed to live on the main site at **`/support/tools/<name>`**, 
 | `/support/tools/lifeincome` | Gifts that pay you income | `lifeincome` |
 | `/support/tools/matching` | Double your gift with an employer match | `matching` |
 | `/support/tools/monthly` | Small monthly gifts, big yearly impact | `monthly` |
+| `/support/tools/deadlines` | When to give so it counts this year | `deadlines` |
+
+The staff acknowledgment-letter tool (`acknowledgments`) is intentionally **not** in this list; use it from the Pages site or an unlisted, access-controlled Drupal page.
 
 Optionally a `/support/tools` landing page listing them (the Pages gallery at `support/tools/index.html` is a ready-made model).
 

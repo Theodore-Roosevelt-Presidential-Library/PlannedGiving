@@ -1,4 +1,4 @@
-/* TRPL Giving Tools v1.2.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
+/* TRPL Giving Tools v1.5.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
 /* ============================================================================
  * TRPL Giving Tools — TAX DATA (single source of truth)
  * ----------------------------------------------------------------------------
@@ -87,7 +87,26 @@ window.TRPL_TAX = {
   ndCredit: {
     rate: 0.40, minGift: 5000, maxIndividual: 10000, maxJoint: 20000, maxBusiness: 10000, carryforwardYears: 3,
     statute: 'N.D.C.C. § 57-38-01.21', formEndowment: 'Schedule ND-1QEC', formPlanned: 'Schedule ND-1PG',
+    // ND requires the nonprofit's letter confirming the fund qualifies (Schedule line 1), and
+    // adds the federally deducted (or QCD-excluded) portion back to ND taxable income (Form ND-1, line 2).
+    requiresQualificationLetter: true, ndAddBack: true,
+    eligibleContributionCap: { single: 25000, mfj: 50000, hoh: 25000, mfs: 25000 },
     plannedGiftTypes: ['charitable gift annuity', 'deferred charitable gift annuity', 'charitable remainder unitrust', 'charitable remainder annuity trust', 'charitable lead unitrust', 'charitable lead annuity trust', 'pooled income fund', 'charitable life estate', 'paid-up life insurance policy']
+  },
+  // Fillable state forms bundled in /forms (public documents from tax.nd.gov).
+  // The form year follows the tax year of the gift; replace with the new
+  // year's PDF and re-check field names during the annual review.
+  ndForms: {
+    qec: { formYear: 2025, file: 'forms/schedule-nd-1qec-2025.pdf', title: 'Schedule ND-1QEC', source: 'https://www.tax.nd.gov/sites/www/files/documents/forms/individual/2025-iit/28708-schedule-nd-1qec-2025.pdf',
+      fields: { name: 'Taxpayers name', fundName: 'Name 1', fundAddress: 'Address 1', amount: 'Amount 1', l2: 'Line 2', l3: 'Line 3', l4: 'Line 4', l5: 'Line 5', l6: 'Line 6', l7: 'Line 7', l8: 'Line 8', l9: 'Line 9' } },
+    pg: { formYear: 2025, file: 'forms/schedule-nd-1pg-2025.pdf', title: 'Schedule ND-1PG', source: 'https://www.tax.nd.gov/sites/www/files/documents/forms/individual/2025-iit/28705-schedule-nd-1pg-2025.pdf' }
+  },
+  // IRS Form 8283 (Rev. Dec 2025), Section A row A field names (XFA-style AcroForm)
+  irsForms: {
+    f8283: { rev: '2025-12', file: 'forms/irs-f8283-2025-12.pdf', source: 'https://www.irs.gov/pub/irs-pdf/f8283.pdf',
+      fields: { name: 'Form8283[0].Page1[0].f1_1[0]', doneeA: 'Form8283[0].Page1[0].Table_Line1_ColsA-C[0].Row1A[0].f1_5[0]', descA: 'Form8283[0].Page1[0].Table_Line1_ColsA-C[0].Row1A[0].f1_7[0]',
+        dateA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_17[0]', acquiredA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_18[0]', howA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_19[0]',
+        costA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_20[0]', fmvA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_21[0]', methodA: 'Form8283[0].Page1[0].Table_Line1_ColsD-I[0].Row1A[0].f1_22[0]' } }
   },
   // ND individual income tax, 2026 (starts from federal taxable income). HOH and
   // MFS use the single / half-joint thresholds here as an approximation.
@@ -131,9 +150,18 @@ window.TRPL_ORG = {
   shortName: 'the Library',
   ein: '47-1324043',
   address: '1401 East Calgary Ave, Suite 210, Bismarck, ND 58503',
-  city: 'Bismarck', state: 'ND',
+  city: 'Bismarck', state: 'ND', stateName: 'North Dakota',
   taxStatus: '501(c)(3) nonprofit',
   legacySociety: 'Heritage Society',
+  /* One sentence used in thank-you letters; keep it short. */
+  missionLine: 'Your support helps the Library carry Theodore Roosevelt’s example of citizenship, conservation, and leadership to new generations.',
+  /* Name of a community foundation donors in your region may use for DAFs (or '' to omit). */
+  communityFoundation: 'North Dakota Community Foundation',
+
+  /* Feature switches. A fork outside North Dakota sets ndCredit: false, which
+   * drops the ND credit tool, the Navigator's ND question, the endowment-credit
+   * deadline entry, and the ND qualification letter in the staff tool. */
+  features: { ndCredit: true, staffTools: true },
   contactEmail: 'giving@trlibrary.com',
   contactPhone: '',                       // optional; shown when set
   contactName: '',                        // optional gift-planning contact, e.g. "Jane Doe, Chief Development Officer"
@@ -149,6 +177,11 @@ window.TRPL_ORG = {
    * page already runs this plugin). Set it here or pass data-dtd-key on the
    * matching tool's placeholder to embed the employer search. */
   doubleTheDonationKey: '',
+
+  /* Brokerage (DTC) instructions for stock gifts. When filled in, the stock
+   * tool's broker letter and Form 8283 draft include them; when blank, the
+   * letter points the donor to the stock gift page for instructions. */
+  brokerage: { firm: '', dtcNumber: '', accountName: '', accountNumber: '', contact: '' },
 
   /* North Dakota Charitable Giving Tax Credit. Gifts qualify only when they go
    * to a "qualified endowment fund" — permanent, irrevocable, spending only
@@ -186,8 +219,31 @@ window.TRPL_ORG = {
     intentForm: ''
   },
 
-  /* Brand palette (2020 Brand Identity System). Embeds inherit the host
-   * page's fonts; override with CSS variables on the wrapper. */
+  /* Gallery site chrome (index.html and support/tools/*). */
+  site: {
+    title: 'Giving Tools', tagline: 'Theodore Roosevelt Presidential Library',
+    repoUrl: 'https://github.com/Theodore-Roosevelt-Presidential-Library/PlannedGiving',
+    nav: [['Ways to give', 'https://www.trlibrary.com/support'], ['Heritage Society', 'https://www.trlibrary.com/heritage-society']],
+    heading: 'Tools for tax-smart giving',
+    lede: 'Free, open-source calculators and guides that help supporters of the Theodore Roosevelt Presidential Library — and their advisors — find the smartest way to give. Every tool drops onto any web page with one line of JavaScript.'
+  },
+
+  /* Webfonts the embeds load from /fonts on their own host. The Library's
+   * licensed faces are listed here; a fork replaces this list with its own
+   * files (or sets fonts: [] and adjusts the font stacks in src/styles.css). */
+  fonts: [
+    ['Dharma Gothic E', 700, 'normal', 'dharma_type-dharmagothice-bold'], ['Dharma Gothic E', 800, 'normal', 'dharma_type-dharmagothice-exbold'],
+    ['Clearface', 400, 'normal', 'clearfacestd-regular'], ['Clearface', 400, 'italic', 'clearfacestd-italic'], ['Clearface', 500, 'normal', 'clearfacestd-bold'], ['Clearface', 500, 'italic', 'clearfacestd-bolditalic'], ['Clearface', 700, 'normal', 'clearfacestd-heavy'],
+    ['Frutiger', 300, 'normal', 'frutigerltstd-light'], ['Frutiger', 400, 'normal', 'frutigerltstd-regular'], ['Frutiger', 400, 'italic', 'frutigerltstd-regularitalic'], ['Frutiger', 700, 'normal', 'frutigerltstd-bold']
+  ],
+
+  /* Metric-matched local fallbacks so text doesn't jump while webfonts load. */
+  fontFallbackCss: '@font-face{font-family:"Clearface Fallback";src:local(Georgia);size-adjust:93.1%;ascent-override:101.28%;descent-override:28.95%;line-gap-override:0%}' +
+    '@font-face{font-family:"Dharma Gothic E Fallback";src:local(Arial);size-adjust:60.46%;ascent-override:141.09%;descent-override:37.31%;line-gap-override:0%}' +
+    '@font-face{font-family:"Frutiger Fallback";src:local(Arial);size-adjust:105.7%;ascent-override:88.47%;descent-override:25.5%;line-gap-override:0%}',
+
+  /* Brand palette (2020 Brand Identity System). The CSS tokens live in
+   * src/styles.css; these values are kept here for reference and for the PDFs. */
   brand: {
     nightSky: '#092A4D', darkForest: '#1B4532', brightForest: '#8FC895', sand: '#D1CCBD',
     deepOrange: '#E7805D', darkGray: '#25282A', sunsetYellow: '#F9D635', springGreen: '#87BB41',
@@ -201,10 +257,10 @@ window.TRPL_ORG = {
  * copy. No dependencies, no build-time framework, ES2017.
  * ========================================================================== */
 (function () {
-  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.2.0') return;
+  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.5.0') return;
 
   var GT = window.TRPLGivingTools = window.TRPLGivingTools || {};
-  GT.version = '1.2.0';
+  GT.version = '1.5.0';
   GT.registry = GT.registry || {};
   GT.mounted = GT.mounted || [];
 
@@ -212,27 +268,20 @@ window.TRPL_ORG = {
   /* Styles — injected once. Everything is scoped under .trpl-gt so the host */
   /* page's CSS and ours stay out of each other's way.                       */
   /* ---------------------------------------------------------------------- */
-  var CSS = "/* TRPL Giving Tools — scoped styles. Tokens mirror the trlibrary.com theme (Tailwind): Dharma Gothic E for display, Clearface for body, Frutiger for UI text; Deep Orange primary buttons with Dark Gray text; squared 2px corners; cream panels. Everything lives under .trpl-gt so nothing leaks either way. */ .trpl-gt { /* brand palette (trlibrary.com theme values) */ --trpl-dark-gray: #25282A; --trpl-night-sky: #092A4D; --trpl-dark-forest: #1B4633; --trpl-darker-forest: #163728; --trpl-bright-forest: #8FC895; --trpl-spring-green: #87BB41; --trpl-sand: #D1CCBD; --trpl-deep-orange: #E7805D; --trpl-deep-orange-dark: #D07556; --trpl-gray-sky: #99ADC5; --trpl-sunset-yellow: #F9D635; --trpl-disabled-gray: #BCBDBE; --trpl-cream: #F0ECE3; --trpl-cream-light: #FAF8F4; /* semantic */ --trpl-accent: var(--trpl-dark-forest); --trpl-ink: var(--trpl-dark-gray); --trpl-muted: #4F5052; --trpl-bg: #ffffff; --trpl-panel: var(--trpl-cream-light); --trpl-panel-strong: var(--trpl-cream); --trpl-line: #D9D4C8; --trpl-radius: 2px; --trpl-radius-lg: 4px; --trpl-font: \"Clearface\", \"Clearface Fallback\", Georgia, \"Times New Roman\", serif; --trpl-font-display: \"Dharma Gothic E\", \"Dharma Gothic E Fallback\", \"Oswald\", \"Arial Narrow\", Impact, sans-serif; --trpl-font-ui: \"Frutiger\", \"Frutiger Fallback\", \"Helvetica Neue\", Arial, sans-serif; font-family: var(--trpl-font); color: var(--trpl-ink); background: var(--trpl-bg); border: 1px solid var(--trpl-line); border-radius: var(--trpl-radius-lg); padding: 28px; max-width: 880px; margin: 0 auto; box-sizing: border-box; line-height: 1.55; font-size: 17px; -webkit-font-smoothing: antialiased; } .trpl-gt[data-theme=\"dark\"] { --trpl-bg: var(--trpl-night-sky); --trpl-panel: #12365f; --trpl-panel-strong: #0d2c50; --trpl-line: #2f5079; --trpl-ink: #F3F1EA; --trpl-muted: #C9D3DF; --trpl-accent: var(--trpl-bright-forest); } .trpl-gt *, .trpl-gt *::before, .trpl-gt *::after { box-sizing: border-box; } .trpl-gt p { margin: 0; } .trpl-gt a { color: var(--trpl-dark-forest); text-decoration: underline; text-underline-offset: 2px; } .trpl-gt[data-theme=\"dark\"] a { color: var(--trpl-bright-forest); } /* ---- header ---------------------------------------------------------- */ .trpl-gt .trpl-head { border-bottom: 3px solid var(--trpl-ink); padding-bottom: 14px; margin-bottom: 22px; } .trpl-gt .trpl-eyebrow { font-family: var(--trpl-font-ui); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 700; color: var(--trpl-deep-orange); margin: 0 0 6px; } .trpl-gt .trpl-h2 { font-family: var(--trpl-font-display); font-size: 40px; line-height: .95; margin: 0 0 10px; color: var(--trpl-ink); font-weight: 700; text-transform: uppercase; letter-spacing: .005em; } .trpl-gt .trpl-h3 { font-family: var(--trpl-font-display); font-size: 24px; line-height: 1; margin: 0 0 10px; color: var(--trpl-ink); font-weight: 700; text-transform: uppercase; } .trpl-gt .trpl-intro { margin: 0; color: var(--trpl-muted); font-size: 17px; max-width: 64ch; } /* ---- layout ---------------------------------------------------------- */ .trpl-gt .trpl-body { display: grid; gap: 22px; } .trpl-gt .trpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px 20px; align-items: start; } .trpl-gt .trpl-grid.trpl-two { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); } .trpl-gt .trpl-section { display: grid; gap: 12px; align-content: start; } .trpl-gt .trpl-panel { background: var(--trpl-panel); border-radius: var(--trpl-radius-lg); padding: 18px; } /* ---- form controls --------------------------------------------------- */ .trpl-gt .trpl-field { display: grid; gap: 6px; align-content: start; } /* align-content:start stops rows drifting when grid cells stretch */ .trpl-gt .trpl-label { font-family: var(--trpl-font-ui); font-weight: 700; font-size: 14px; letter-spacing: .01em; color: var(--trpl-ink); } .trpl-gt .trpl-help { font-family: var(--trpl-font-ui); font-size: 13px; line-height: 1.45; color: var(--trpl-muted); } .trpl-gt .trpl-help a { color: inherit; } .trpl-gt .trpl-input { width: 100%; font-family: var(--trpl-font-ui); font-size: 16px; padding: 10px 12px; border: 1px solid var(--trpl-disabled-gray); border-radius: var(--trpl-radius); background: var(--trpl-bg); color: var(--trpl-ink); min-height: 44px; line-height: 1.3; margin: 0; } .trpl-gt .trpl-input:focus { outline: 3px solid rgba(231,128,93,.45); outline-offset: 1px; border-color: var(--trpl-deep-orange-dark); } .trpl-gt select.trpl-input { appearance: auto; -webkit-appearance: menulist; } .trpl-gt .trpl-money { display: flex; align-items: stretch; } .trpl-gt .trpl-money .trpl-input { flex: 1; min-width: 0; border-radius: 0 var(--trpl-radius) var(--trpl-radius) 0; } .trpl-gt .trpl-money .trpl-input:first-child { border-radius: var(--trpl-radius) 0 0 var(--trpl-radius); } .trpl-gt .trpl-prefix, .trpl-gt .trpl-suffix { display: flex; align-items: center; padding: 0 12px; border: 1px solid var(--trpl-disabled-gray); background: var(--trpl-panel-strong); color: var(--trpl-muted); font-family: var(--trpl-font-ui); font-weight: 700; font-size: 15px; } .trpl-gt .trpl-prefix { border-right: 0; border-radius: var(--trpl-radius) 0 0 var(--trpl-radius); } .trpl-gt .trpl-suffix { border-left: 0; border-radius: 0 var(--trpl-radius) var(--trpl-radius) 0; } .trpl-gt .trpl-radios { display: flex; flex-wrap: wrap; gap: 8px; } .trpl-gt .trpl-radios.trpl-stacked { flex-direction: column; } .trpl-gt .trpl-radio { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border: 1px solid var(--trpl-disabled-gray); border-radius: var(--trpl-radius); cursor: pointer; background: var(--trpl-bg); font-family: var(--trpl-font-ui); font-size: 15px; line-height: 1.4; min-height: 44px; margin: 0; color: var(--trpl-ink); } .trpl-gt .trpl-radio:hover { border-color: var(--trpl-muted); } .trpl-gt .trpl-radio:has(input:checked) { border-color: var(--trpl-deep-orange-dark); background: #FBEFE9; box-shadow: inset 0 0 0 1px var(--trpl-deep-orange-dark); } .trpl-gt[data-theme=\"dark\"] .trpl-radio:has(input:checked) { background: #1f3f66; } .trpl-gt .trpl-radio input { margin: 3px 0 0; accent-color: var(--trpl-deep-orange-dark); flex: none; width: 16px; height: 16px; } .trpl-gt .trpl-radio.trpl-single { border: 0; padding: 4px 0; background: transparent; box-shadow: none; } .trpl-gt .trpl-range { width: 100%; accent-color: var(--trpl-deep-orange-dark); margin: 10px 0; } .trpl-gt .trpl-textout { width: 100%; min-height: 150px; font-family: var(--trpl-font); font-size: 16px; padding: 16px 18px; border: 1px solid var(--trpl-disabled-gray); border-left: 4px solid var(--trpl-deep-orange); border-radius: var(--trpl-radius); background: var(--trpl-panel); color: var(--trpl-ink); white-space: pre-wrap; line-height: 1.6; margin: 0; } /* ---- results --------------------------------------------------------- */ .trpl-gt .trpl-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; } .trpl-gt .trpl-stat { background: var(--trpl-panel); border-radius: var(--trpl-radius-lg); padding: 16px 18px 14px; border-top: 5px solid var(--trpl-dark-forest); min-width: 0; } .trpl-gt .trpl-stat.trpl-good { border-top-color: var(--trpl-spring-green); } .trpl-gt .trpl-stat.trpl-highlight { border-top-color: var(--trpl-deep-orange); } .trpl-gt .trpl-stat.trpl-muted { border-top-color: var(--trpl-sand); } .trpl-gt .trpl-stat-label { font-family: var(--trpl-font-ui); font-size: 12px; line-height: 1.35; color: var(--trpl-muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; } .trpl-gt .trpl-stat-value { font-family: var(--trpl-font-display); font-size: 36px; font-weight: 700; color: var(--trpl-ink); margin: 6px 0 4px; line-height: .95; letter-spacing: .01em; overflow-wrap: anywhere; } .trpl-gt .trpl-stat-sub { font-family: var(--trpl-font-ui); font-size: 13px; line-height: 1.45; color: var(--trpl-muted); } .trpl-gt .trpl-bars { display: grid; gap: 10px; padding: 4px 0; } .trpl-gt .trpl-bar-row { display: grid; grid-template-columns: minmax(130px, 1.2fr) 3fr auto; gap: 12px; align-items: center; font-family: var(--trpl-font-ui); font-size: 14px; } .trpl-gt .trpl-bar-track { background: var(--trpl-panel-strong); height: 14px; overflow: hidden; border-radius: var(--trpl-radius); } .trpl-gt .trpl-bar-fill { height: 100%; background: var(--trpl-dark-forest); transition: width .3s ease; } .trpl-gt .trpl-bar-fill.trpl-good { background: var(--trpl-spring-green); } .trpl-gt .trpl-bar-fill.trpl-highlight { background: var(--trpl-deep-orange); } .trpl-gt .trpl-bar-fill.trpl-muted { background: var(--trpl-sand); } .trpl-gt .trpl-bar-value { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; } .trpl-gt .trpl-callout { border-left: 4px solid var(--trpl-dark-forest); background: var(--trpl-panel); padding: 14px 18px; border-radius: 0 var(--trpl-radius-lg) var(--trpl-radius-lg) 0; font-size: 16px; } .trpl-gt .trpl-callout.trpl-warn { border-left-color: var(--trpl-deep-orange); background: #FBEFE9; } .trpl-gt[data-theme=\"dark\"] .trpl-callout.trpl-warn { background: #3a2a2a; } .trpl-gt .trpl-callout.trpl-good { border-left-color: var(--trpl-spring-green); } .trpl-gt .trpl-callout.trpl-info { border-left-color: var(--trpl-gray-sky); } .trpl-gt .trpl-callout p { margin: 0 0 8px; } .trpl-gt .trpl-callout p:last-child { margin: 0; } .trpl-gt .trpl-list { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 16px; } .trpl-gt .trpl-list.trpl-checks { list-style: none; padding-left: 0; } .trpl-gt .trpl-list.trpl-checks li { padding-left: 26px; position: relative; } .trpl-gt .trpl-list.trpl-checks li::before { content: \"✓\"; position: absolute; left: 0; color: var(--trpl-spring-green); font-weight: 800; } .trpl-gt table.trpl-table { width: 100%; border-collapse: collapse; font-family: var(--trpl-font-ui); font-size: 14px; } .trpl-gt table.trpl-table th, .trpl-gt table.trpl-table td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--trpl-line); vertical-align: top; } .trpl-gt table.trpl-table th { font-weight: 700; color: var(--trpl-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; } .trpl-gt table.trpl-table td.trpl-num, .trpl-gt table.trpl-table th.trpl-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } .trpl-gt .trpl-steps { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; } .trpl-gt .trpl-steps li { position: relative; padding-left: 42px; font-size: 16px; min-height: 30px; } .trpl-gt .trpl-steps li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--trpl-ink); color: #fff; font-family: var(--trpl-font-display); font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; } .trpl-gt[data-theme=\"dark\"] .trpl-steps li::before { background: var(--trpl-deep-orange); color: var(--trpl-dark-gray); } .trpl-gt .trpl-infocard { display: grid; gap: 4px; background: var(--trpl-panel-strong); border-radius: var(--trpl-radius-lg); padding: 16px 18px; font-family: var(--trpl-font-ui); font-size: 15px; } .trpl-gt .trpl-infocard b { font-family: var(--trpl-font-display); text-transform: uppercase; font-size: 19px; letter-spacing: .02em; margin-bottom: 4px; } /* ---- buttons --------------------------------------------------------- */ .trpl-gt .trpl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--trpl-font-ui); font-weight: 700; font-size: 14px; letter-spacing: .01em; padding: 11px 20px; border-radius: var(--trpl-radius); border: 1px solid var(--trpl-deep-orange-dark); background: var(--trpl-bg); color: var(--trpl-ink); cursor: pointer; text-decoration: none; min-height: 44px; line-height: 1.2; transition: background .15s, border-color .15s; } .trpl-gt .trpl-btn:hover { background: var(--trpl-deep-orange-dark); color: var(--trpl-dark-gray); border-color: var(--trpl-deep-orange-dark); } .trpl-gt .trpl-btn.trpl-primary { background: var(--trpl-deep-orange); border-color: var(--trpl-deep-orange); color: var(--trpl-dark-gray); } .trpl-gt .trpl-btn.trpl-primary:hover { background: var(--trpl-deep-orange-dark); border-color: var(--trpl-deep-orange-dark); } .trpl-gt .trpl-btn.trpl-secondary { border-color: var(--trpl-disabled-gray); color: var(--trpl-ink); background: var(--trpl-bg); } .trpl-gt .trpl-btn.trpl-secondary:hover { background: var(--trpl-panel-strong); border-color: var(--trpl-muted); color: var(--trpl-ink); } .trpl-gt .trpl-btn.trpl-highlight { background: var(--trpl-dark-forest); border-color: var(--trpl-dark-forest); color: #fff; } .trpl-gt .trpl-btn:focus-visible { outline: 3px solid rgba(231,128,93,.55); outline-offset: 2px; } .trpl-gt[data-theme=\"dark\"] .trpl-btn.trpl-secondary { color: #fff; border-color: var(--trpl-gray-sky); } .trpl-gt .trpl-actions { display: flex; flex-wrap: wrap; gap: 10px; } .trpl-gt .trpl-cta { background: var(--trpl-dark-forest); color: #fff; border-radius: var(--trpl-radius-lg); padding: 22px; display: grid; gap: 14px; } .trpl-gt .trpl-cta p { margin: 0; font-size: 17px; } .trpl-gt .trpl-cta .trpl-btn { justify-self: start; background: var(--trpl-deep-orange); color: var(--trpl-dark-gray); border-color: var(--trpl-deep-orange); } .trpl-gt .trpl-cta .trpl-btn:hover { background: var(--trpl-sand); border-color: var(--trpl-sand); } /* ---- misc ------------------------------------------------------------ */ .trpl-gt .trpl-advisor { background: var(--trpl-panel-strong); border-radius: var(--trpl-radius-lg); padding: 14px 18px; } .trpl-gt .trpl-advisor summary { cursor: pointer; font-family: var(--trpl-font-display); text-transform: uppercase; font-size: 20px; letter-spacing: .02em; color: var(--trpl-ink); list-style-position: outside; } .trpl-gt .trpl-advisor .trpl-list { margin-top: 12px; } .trpl-gt .trpl-disclaimer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--trpl-line); font-family: var(--trpl-font-ui); font-size: 13px; line-height: 1.5; color: var(--trpl-muted); } .trpl-gt .trpl-disclaimer p { margin: 0 0 8px; } .trpl-gt .trpl-fine { font-size: 12px; } .trpl-gt .trpl-contact { font-family: var(--trpl-font-ui); font-size: 14px; color: var(--trpl-muted); margin: 0; } .trpl-gt .trpl-progress { display: flex; gap: 6px; } .trpl-gt .trpl-progress span { flex: 1; height: 5px; background: var(--trpl-line); } .trpl-gt .trpl-progress span.trpl-on { background: var(--trpl-deep-orange); } .trpl-gt .trpl-question { font-family: var(--trpl-font-display); font-size: 30px; line-height: .98; font-weight: 700; text-transform: uppercase; color: var(--trpl-ink); margin: 4px 0 4px; } .trpl-gt .trpl-rec { border: 1px solid var(--trpl-line); border-radius: var(--trpl-radius-lg); padding: 18px 20px; display: grid; gap: 8px; background: var(--trpl-bg); } .trpl-gt .trpl-rec.trpl-top { border-color: var(--trpl-deep-orange); background: var(--trpl-panel); box-shadow: inset 0 0 0 1px var(--trpl-deep-orange); } .trpl-gt .trpl-rec h4 { margin: 0; font-family: var(--trpl-font-display); text-transform: uppercase; font-size: 24px; line-height: 1; color: var(--trpl-ink); font-weight: 700; } .trpl-gt .trpl-rec .trpl-tag { display: inline-block; font-family: var(--trpl-font-ui); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; color: var(--trpl-deep-orange-dark); } .trpl-gt .trpl-rec p { margin: 0; font-size: 16px; } .trpl-gt .trpl-compact { padding: 18px; } .trpl-gt iframe { max-width: 100%; } @media (max-width: 600px) { .trpl-gt { padding: 18px 16px; border-radius: 0; border-left: 0; border-right: 0; } .trpl-gt .trpl-h2 { font-size: 32px; } .trpl-gt .trpl-question { font-size: 26px; } .trpl-gt .trpl-bar-row { grid-template-columns: 1fr auto; } .trpl-gt .trpl-bar-row .trpl-bar-track { grid-column: 1 / -1; } .trpl-gt .trpl-stat-value { font-size: 30px; } .trpl-gt .trpl-grid, .trpl-gt .trpl-grid.trpl-two { grid-template-columns: 1fr; } .trpl-gt .trpl-actions .trpl-btn { flex: 1 1 auto; } } @media print { .trpl-gt .trpl-btn, .trpl-gt .trpl-actions { display: none; } .trpl-gt { border: 0; } }";
+  var CSS = "/* TRPL Giving Tools — scoped styles. Tokens mirror the trlibrary.com theme (Tailwind): Dharma Gothic E for display, Clearface for body, Frutiger for UI text; Deep Orange primary buttons with Dark Gray text; squared 2px corners; cream panels. Everything lives under .trpl-gt so nothing leaks either way. */ .trpl-gt { /* brand palette (trlibrary.com theme values) */ --trpl-dark-gray: #25282A; --trpl-night-sky: #092A4D; --trpl-dark-forest: #1B4633; --trpl-darker-forest: #163728; --trpl-bright-forest: #8FC895; --trpl-spring-green: #87BB41; --trpl-sand: #D1CCBD; --trpl-deep-orange: #E7805D; --trpl-deep-orange-dark: #D07556; --trpl-gray-sky: #99ADC5; --trpl-sunset-yellow: #F9D635; --trpl-disabled-gray: #BCBDBE; --trpl-cream: #F0ECE3; --trpl-cream-light: #FAF8F4; /* semantic */ --trpl-accent: var(--trpl-dark-forest); --trpl-ink: var(--trpl-dark-gray); --trpl-muted: #4F5052; --trpl-bg: #ffffff; --trpl-panel: var(--trpl-cream-light); --trpl-panel-strong: var(--trpl-cream); --trpl-line: #D9D4C8; --trpl-radius: 2px; --trpl-radius-lg: 4px; --trpl-font: \"Clearface\", \"Clearface Fallback\", Georgia, \"Times New Roman\", serif; --trpl-font-display: \"Dharma Gothic E\", \"Dharma Gothic E Fallback\", \"Oswald\", \"Arial Narrow\", Impact, sans-serif; --trpl-font-ui: \"Frutiger\", \"Frutiger Fallback\", \"Helvetica Neue\", Arial, sans-serif; font-family: var(--trpl-font); color: var(--trpl-ink); background: var(--trpl-bg); border: 1px solid var(--trpl-line); border-radius: var(--trpl-radius-lg); padding: 28px; max-width: 880px; margin: 0 auto; box-sizing: border-box; line-height: 1.55; font-size: 17px; -webkit-font-smoothing: antialiased; } .trpl-gt[data-theme=\"dark\"] { --trpl-bg: var(--trpl-night-sky); --trpl-panel: #12365f; --trpl-panel-strong: #0d2c50; --trpl-line: #2f5079; --trpl-ink: #F3F1EA; --trpl-muted: #C9D3DF; --trpl-accent: var(--trpl-bright-forest); } .trpl-gt *, .trpl-gt *::before, .trpl-gt *::after { box-sizing: border-box; } .trpl-gt p { margin: 0; } .trpl-gt a { color: var(--trpl-dark-forest); text-decoration: underline; text-underline-offset: 2px; } .trpl-gt[data-theme=\"dark\"] a { color: var(--trpl-bright-forest); } /* ---- header ---------------------------------------------------------- */ .trpl-gt .trpl-head { border-bottom: 3px solid var(--trpl-ink); padding-bottom: 14px; margin-bottom: 22px; } .trpl-gt .trpl-eyebrow { font-family: var(--trpl-font-ui); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 700; color: var(--trpl-deep-orange); margin: 0 0 6px; } .trpl-gt .trpl-h2 { font-family: var(--trpl-font-display); font-size: 40px; line-height: .95; margin: 0 0 10px; color: var(--trpl-ink); font-weight: 700; text-transform: uppercase; letter-spacing: .005em; } .trpl-gt .trpl-h3 { font-family: var(--trpl-font-display); font-size: 24px; line-height: 1; margin: 0 0 10px; color: var(--trpl-ink); font-weight: 700; text-transform: uppercase; } .trpl-gt .trpl-intro { margin: 0; color: var(--trpl-muted); font-size: 17px; max-width: 64ch; } /* ---- layout ---------------------------------------------------------- */ .trpl-gt .trpl-body { display: grid; gap: 22px; } .trpl-gt .trpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px 20px; align-items: start; } .trpl-gt .trpl-grid.trpl-two { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); } .trpl-gt .trpl-section { display: grid; gap: 12px; align-content: start; } .trpl-gt .trpl-panel { background: var(--trpl-panel); border-radius: var(--trpl-radius-lg); padding: 18px; } /* ---- form controls --------------------------------------------------- */ .trpl-gt .trpl-field { display: grid; gap: 6px; align-content: start; } /* align-content:start stops rows drifting when grid cells stretch */ .trpl-gt .trpl-label { font-family: var(--trpl-font-ui); font-weight: 700; font-size: 14px; letter-spacing: .01em; color: var(--trpl-ink); } .trpl-gt .trpl-help { font-family: var(--trpl-font-ui); font-size: 13px; line-height: 1.45; color: var(--trpl-muted); } .trpl-gt .trpl-help a { color: inherit; } .trpl-gt .trpl-input { width: 100%; font-family: var(--trpl-font-ui); font-size: 16px; padding: 10px 12px; border: 1px solid var(--trpl-disabled-gray); border-radius: var(--trpl-radius); background: var(--trpl-bg); color: var(--trpl-ink); min-height: 44px; line-height: 1.3; margin: 0; } .trpl-gt .trpl-input:focus { outline: 3px solid rgba(231,128,93,.45); outline-offset: 1px; border-color: var(--trpl-deep-orange-dark); } .trpl-gt select.trpl-input { appearance: auto; -webkit-appearance: menulist; } .trpl-gt .trpl-money { display: flex; align-items: stretch; } .trpl-gt .trpl-money .trpl-input { flex: 1; min-width: 0; border-radius: 0 var(--trpl-radius) var(--trpl-radius) 0; } .trpl-gt .trpl-money .trpl-input:first-child { border-radius: var(--trpl-radius) 0 0 var(--trpl-radius); } .trpl-gt .trpl-prefix, .trpl-gt .trpl-suffix { display: flex; align-items: center; padding: 0 12px; border: 1px solid var(--trpl-disabled-gray); background: var(--trpl-panel-strong); color: var(--trpl-muted); font-family: var(--trpl-font-ui); font-weight: 700; font-size: 15px; } .trpl-gt .trpl-prefix { border-right: 0; border-radius: var(--trpl-radius) 0 0 var(--trpl-radius); } .trpl-gt .trpl-suffix { border-left: 0; border-radius: 0 var(--trpl-radius) var(--trpl-radius) 0; } .trpl-gt .trpl-radios { display: flex; flex-wrap: wrap; gap: 8px; } .trpl-gt .trpl-radios.trpl-stacked { flex-direction: column; } .trpl-gt .trpl-radio { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border: 1px solid var(--trpl-disabled-gray); border-radius: var(--trpl-radius); cursor: pointer; background: var(--trpl-bg); font-family: var(--trpl-font-ui); font-size: 15px; line-height: 1.4; min-height: 44px; margin: 0; color: var(--trpl-ink); } .trpl-gt .trpl-radio:hover { border-color: var(--trpl-muted); } .trpl-gt .trpl-radio:has(input:checked) { border-color: var(--trpl-deep-orange-dark); background: #FBEFE9; box-shadow: inset 0 0 0 1px var(--trpl-deep-orange-dark); } .trpl-gt[data-theme=\"dark\"] .trpl-radio:has(input:checked) { background: #1f3f66; } .trpl-gt .trpl-radio input { margin: 3px 0 0; accent-color: var(--trpl-deep-orange-dark); flex: none; width: 16px; height: 16px; } .trpl-gt .trpl-radio.trpl-single { border: 0; padding: 4px 0; background: transparent; box-shadow: none; } .trpl-gt .trpl-range { width: 100%; accent-color: var(--trpl-deep-orange-dark); margin: 10px 0; } .trpl-gt .trpl-textout { width: 100%; min-height: 150px; font-family: var(--trpl-font); font-size: 16px; padding: 16px 18px; border: 1px solid var(--trpl-disabled-gray); border-left: 4px solid var(--trpl-deep-orange); border-radius: var(--trpl-radius); background: var(--trpl-panel); color: var(--trpl-ink); white-space: pre-wrap; line-height: 1.6; margin: 0; } /* ---- results --------------------------------------------------------- */ .trpl-gt .trpl-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; } .trpl-gt .trpl-stat { background: var(--trpl-panel); border-radius: var(--trpl-radius-lg); padding: 16px 18px 14px; border-top: 5px solid var(--trpl-dark-forest); min-width: 0; } .trpl-gt .trpl-stat.trpl-good { border-top-color: var(--trpl-spring-green); } .trpl-gt .trpl-stat.trpl-highlight { border-top-color: var(--trpl-deep-orange); } .trpl-gt .trpl-stat.trpl-muted { border-top-color: var(--trpl-sand); } .trpl-gt .trpl-stat-label { font-family: var(--trpl-font-ui); font-size: 12px; line-height: 1.35; color: var(--trpl-muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; } .trpl-gt .trpl-stat-value { font-family: var(--trpl-font-display); font-size: 36px; font-weight: 700; color: var(--trpl-ink); margin: 6px 0 4px; line-height: .95; letter-spacing: .01em; overflow-wrap: anywhere; } .trpl-gt .trpl-stat-sub { font-family: var(--trpl-font-ui); font-size: 13px; line-height: 1.45; color: var(--trpl-muted); } .trpl-gt .trpl-bars { display: grid; gap: 10px; padding: 4px 0; } .trpl-gt .trpl-bar-row { display: grid; grid-template-columns: minmax(130px, 1.2fr) 3fr auto; gap: 12px; align-items: center; font-family: var(--trpl-font-ui); font-size: 14px; } .trpl-gt .trpl-bar-track { background: var(--trpl-panel-strong); height: 14px; overflow: hidden; border-radius: var(--trpl-radius); } .trpl-gt .trpl-bar-fill { height: 100%; background: var(--trpl-dark-forest); transition: width .3s ease; } .trpl-gt .trpl-bar-fill.trpl-good { background: var(--trpl-spring-green); } .trpl-gt .trpl-bar-fill.trpl-highlight { background: var(--trpl-deep-orange); } .trpl-gt .trpl-bar-fill.trpl-muted { background: var(--trpl-sand); } .trpl-gt .trpl-bar-value { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; } .trpl-gt .trpl-callout { border-left: 4px solid var(--trpl-dark-forest); background: var(--trpl-panel); padding: 14px 18px; border-radius: 0 var(--trpl-radius-lg) var(--trpl-radius-lg) 0; font-size: 16px; } .trpl-gt .trpl-callout.trpl-warn { border-left-color: var(--trpl-deep-orange); background: #FBEFE9; } .trpl-gt[data-theme=\"dark\"] .trpl-callout.trpl-warn { background: #3a2a2a; } .trpl-gt .trpl-callout.trpl-good { border-left-color: var(--trpl-spring-green); } .trpl-gt .trpl-callout.trpl-info { border-left-color: var(--trpl-gray-sky); } .trpl-gt .trpl-callout p { margin: 0 0 8px; } .trpl-gt .trpl-callout p:last-child { margin: 0; } .trpl-gt .trpl-list { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 16px; } .trpl-gt .trpl-list.trpl-checks { list-style: none; padding-left: 0; } .trpl-gt .trpl-list.trpl-checks li { padding-left: 26px; position: relative; } .trpl-gt .trpl-list.trpl-checks li::before { content: \"✓\"; position: absolute; left: 0; color: var(--trpl-spring-green); font-weight: 800; } .trpl-gt table.trpl-table { width: 100%; border-collapse: collapse; font-family: var(--trpl-font-ui); font-size: 14px; } .trpl-gt table.trpl-table th, .trpl-gt table.trpl-table td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--trpl-line); vertical-align: top; } .trpl-gt table.trpl-table th { font-weight: 700; color: var(--trpl-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; } .trpl-gt table.trpl-table td.trpl-num, .trpl-gt table.trpl-table th.trpl-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } .trpl-gt .trpl-steps { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; } .trpl-gt .trpl-steps li { position: relative; padding-left: 42px; font-size: 16px; min-height: 30px; } .trpl-gt .trpl-steps li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--trpl-ink); color: #fff; font-family: var(--trpl-font-display); font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; } .trpl-gt[data-theme=\"dark\"] .trpl-steps li::before { background: var(--trpl-deep-orange); color: var(--trpl-dark-gray); } .trpl-gt .trpl-infocard { display: grid; gap: 4px; background: var(--trpl-panel-strong); border-radius: var(--trpl-radius-lg); padding: 16px 18px; font-family: var(--trpl-font-ui); font-size: 15px; } .trpl-gt .trpl-infocard b { font-family: var(--trpl-font-display); text-transform: uppercase; font-size: 19px; letter-spacing: .02em; margin-bottom: 4px; } /* ---- buttons --------------------------------------------------------- */ .trpl-gt .trpl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--trpl-font-ui); font-weight: 700; font-size: 14px; letter-spacing: .01em; padding: 11px 20px; border-radius: var(--trpl-radius); border: 1px solid var(--trpl-deep-orange-dark); background: var(--trpl-bg); color: var(--trpl-ink); cursor: pointer; text-decoration: none; min-height: 44px; line-height: 1.2; transition: background .15s, border-color .15s; } .trpl-gt .trpl-btn:hover { background: var(--trpl-deep-orange-dark); color: var(--trpl-dark-gray); border-color: var(--trpl-deep-orange-dark); } .trpl-gt .trpl-btn.trpl-primary { background: var(--trpl-deep-orange); border-color: var(--trpl-deep-orange); color: var(--trpl-dark-gray); } .trpl-gt .trpl-btn.trpl-primary:hover { background: var(--trpl-deep-orange-dark); border-color: var(--trpl-deep-orange-dark); } .trpl-gt .trpl-btn.trpl-secondary { border-color: var(--trpl-disabled-gray); color: var(--trpl-ink); background: var(--trpl-bg); } .trpl-gt .trpl-btn.trpl-secondary:hover { background: var(--trpl-panel-strong); border-color: var(--trpl-muted); color: var(--trpl-ink); } .trpl-gt .trpl-btn.trpl-highlight { background: var(--trpl-dark-forest); border-color: var(--trpl-dark-forest); color: #fff; } .trpl-gt .trpl-btn:focus-visible { outline: 3px solid rgba(231,128,93,.55); outline-offset: 2px; } .trpl-gt[data-theme=\"dark\"] .trpl-btn.trpl-secondary { color: #fff; border-color: var(--trpl-gray-sky); } .trpl-gt .trpl-actions { display: flex; flex-wrap: wrap; gap: 10px; } .trpl-gt .trpl-cta { background: var(--trpl-dark-forest); color: #fff; border-radius: var(--trpl-radius-lg); padding: 22px; display: grid; gap: 14px; } .trpl-gt .trpl-cta p { margin: 0; font-size: 17px; } .trpl-gt .trpl-cta .trpl-btn { justify-self: start; background: var(--trpl-deep-orange); color: var(--trpl-dark-gray); border-color: var(--trpl-deep-orange); } .trpl-gt .trpl-cta .trpl-btn:hover { background: var(--trpl-sand); border-color: var(--trpl-sand); } /* ---- misc ------------------------------------------------------------ */ .trpl-gt .trpl-advisor { background: var(--trpl-panel-strong); border-radius: var(--trpl-radius-lg); padding: 14px 18px; } .trpl-gt .trpl-advisor summary { cursor: pointer; font-family: var(--trpl-font-display); text-transform: uppercase; font-size: 20px; letter-spacing: .02em; color: var(--trpl-ink); list-style-position: outside; } .trpl-gt .trpl-advisor .trpl-list { margin-top: 12px; } .trpl-gt .trpl-disclaimer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--trpl-line); font-family: var(--trpl-font-ui); font-size: 13px; line-height: 1.5; color: var(--trpl-muted); } .trpl-gt .trpl-disclaimer p { margin: 0 0 8px; } .trpl-gt .trpl-fine { font-size: 12px; } .trpl-gt .trpl-contact { font-family: var(--trpl-font-ui); font-size: 14px; color: var(--trpl-muted); margin: 0; } .trpl-gt .trpl-progress { display: flex; gap: 6px; } .trpl-gt .trpl-progress span { flex: 1; height: 5px; background: var(--trpl-line); } .trpl-gt .trpl-progress span.trpl-on { background: var(--trpl-deep-orange); } .trpl-gt .trpl-question { font-family: var(--trpl-font-display); font-size: 30px; line-height: .98; font-weight: 700; text-transform: uppercase; color: var(--trpl-ink); margin: 4px 0 4px; } .trpl-gt .trpl-rec { border: 1px solid var(--trpl-line); border-radius: var(--trpl-radius-lg); padding: 18px 20px; display: grid; gap: 8px; background: var(--trpl-bg); } .trpl-gt .trpl-rec.trpl-top { border-color: var(--trpl-deep-orange); background: var(--trpl-panel); box-shadow: inset 0 0 0 1px var(--trpl-deep-orange); } .trpl-gt .trpl-rec h4 { margin: 0; font-family: var(--trpl-font-display); text-transform: uppercase; font-size: 24px; line-height: 1; color: var(--trpl-ink); font-weight: 700; } .trpl-gt .trpl-rec .trpl-tag { display: inline-block; font-family: var(--trpl-font-ui); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; color: var(--trpl-deep-orange-dark); } .trpl-gt .trpl-rec p { margin: 0; font-size: 16px; } .trpl-gt .trpl-compact { padding: 18px; } .trpl-gt iframe { max-width: 100%; } @media (max-width: 600px) { .trpl-gt { padding: 18px 16px; border-radius: 0; border-left: 0; border-right: 0; } .trpl-gt .trpl-h2 { font-size: 32px; } .trpl-gt .trpl-question { font-size: 26px; } .trpl-gt .trpl-bar-row { grid-template-columns: 1fr auto; } .trpl-gt .trpl-bar-row .trpl-bar-track { grid-column: 1 / -1; } .trpl-gt .trpl-stat-value { font-size: 30px; } .trpl-gt .trpl-grid, .trpl-gt .trpl-grid.trpl-two { grid-template-columns: 1fr; } .trpl-gt .trpl-actions .trpl-btn { flex: 1 1 auto; } } @media print { .trpl-gt .trpl-btn, .trpl-gt .trpl-actions { display: none; } .trpl-gt { border: 0; } } .trpl-gt .trpl-sharebar { border-top: 1px dashed var(--trpl-line); padding-top: 16px; display: grid; gap: 10px; } .trpl-gt .trpl-sharebar .trpl-eyebrow { color: var(--trpl-muted); }";
   /* Where this bundle was loaded from, so fonts resolve on the tools site,
    * on trlibrary.com, and in local development alike. */
   var SCRIPT_BASE = (function () {
     var src = document.currentScript && document.currentScript.src;
-    return src ? src.replace(/dist\/[^\/]*$/, '') : 'https://givingtools.labs.trlibrary.com/';
+    return src ? src.replace(/dist\/[^\/]*$/, '') : ((window.TRPL_ORG && window.TRPL_ORG.urls.tools) || '/');
   })();
   GT.base = GT.base || SCRIPT_BASE;
-  var FONTS = [
-    ['Dharma Gothic E', 700, 'normal', 'dharma_type-dharmagothice-bold'], ['Dharma Gothic E', 800, 'normal', 'dharma_type-dharmagothice-exbold'],
-    ['Clearface', 400, 'normal', 'clearfacestd-regular'], ['Clearface', 400, 'italic', 'clearfacestd-italic'], ['Clearface', 500, 'normal', 'clearfacestd-bold'], ['Clearface', 500, 'italic', 'clearfacestd-bolditalic'], ['Clearface', 700, 'normal', 'clearfacestd-heavy'],
-    ['Frutiger', 300, 'normal', 'frutigerltstd-light'], ['Frutiger', 400, 'normal', 'frutigerltstd-regular'], ['Frutiger', 400, 'italic', 'frutigerltstd-regularitalic'], ['Frutiger', 700, 'normal', 'frutigerltstd-bold']
-  ];
+  var FONTS = (window.TRPL_ORG && window.TRPL_ORG.fonts) || [];
   function injectCSS(loadFonts) {
-    if (loadFonts !== false && !document.getElementById('trpl-gt-fonts')) {
+    if (loadFonts !== false && FONTS.length && !document.getElementById('trpl-gt-fonts')) {
       var f = document.createElement('style');
       f.id = 'trpl-gt-fonts';
-      f.textContent = FONTS.map(function (x) { return '@font-face{font-family:"' + x[0] + '";font-weight:' + x[1] + ';font-style:' + x[2] + ';font-display:swap;src:url("' + GT.base + 'fonts/' + x[3] + '.woff2") format("woff2")}'; }).join('') +
-        '@font-face{font-family:"Clearface Fallback";src:local(Georgia);size-adjust:93.1%;ascent-override:101.28%;descent-override:28.95%;line-gap-override:0%}' +
-        '@font-face{font-family:"Dharma Gothic E Fallback";src:local(Arial);size-adjust:60.46%;ascent-override:141.09%;descent-override:37.31%;line-gap-override:0%}' +
-        '@font-face{font-family:"Frutiger Fallback";src:local(Arial);size-adjust:105.7%;ascent-override:88.47%;descent-override:25.5%;line-gap-override:0%}';
+      f.textContent = FONTS.map(function (x) { return '@font-face{font-family:"' + x[0] + '";font-weight:' + x[1] + ';font-style:' + x[2] + ';font-display:swap;src:url("' + GT.base + 'fonts/' + x[3] + '.woff2") format("woff2")}'; }).join('') + ((window.TRPL_ORG && window.TRPL_ORG.fontFallbackCss) || '');
       document.head.appendChild(f);
     }
     if (document.getElementById('trpl-gt-css')) return;
@@ -353,7 +402,7 @@ window.TRPL_ORG = {
     function get() { return num(inp.value); }
     inp.addEventListener('input', function () { opts.onChange && opts.onChange(get()); });
     inp.addEventListener('blur', function () { if (inp.value !== '') inp.value = money(get()).slice(1); });
-    return { el: wrap, input: inp, get: get, set: function (v) { inp.value = money(v).slice(1); } };
+    return { el: wrap, input: inp, type: 'number', get: get, set: function (v) { inp.value = money(v).slice(1); } };
   }
   function numberInput(opts) {
     opts = opts || {};
@@ -361,7 +410,7 @@ window.TRPL_ORG = {
     var wrap = opts.suffix ? h('div.money', [inp, h('span.suffix', opts.suffix)]) : inp;
     function get() { var v = num(inp.value, opts.value || 0); return opts.min != null ? clamp(v, opts.min, opts.max == null ? Infinity : opts.max) : v; }
     inp.addEventListener('input', function () { opts.onChange && opts.onChange(get()); });
-    return { el: wrap, input: inp, get: get, set: function (v) { inp.value = v; } };
+    return { el: wrap, input: inp, type: inp.type === 'text' ? 'text' : 'number', get: get, set: function (v) { inp.value = v; } };
   }
   function percentInput(opts) {
     opts = opts || {};
@@ -369,12 +418,12 @@ window.TRPL_ORG = {
     var wrap = h('div.money', [inp, h('span.suffix', '%')]);
     function get() { return num(inp.value) / 100; }
     inp.addEventListener('input', function () { opts.onChange && opts.onChange(get()); });
-    return { el: wrap, input: inp, get: get, set: function (v) { inp.value = +(v * 100).toFixed(2); } };
+    return { el: wrap, input: inp, type: 'number', get: get, set: function (v) { inp.value = +(v * 100).toFixed(2); } };
   }
   function select(opts) {
     var sel = h('select.input', opts.options.map(function (o) { return h('option', { value: o[0], selected: o[0] === opts.value }, o[1]); }));
     sel.addEventListener('change', function () { opts.onChange && opts.onChange(sel.value); });
-    return { el: sel, input: sel, get: function () { return sel.value; }, set: function (v) { sel.value = v; } };
+    return { el: sel, input: sel, type: 'string', get: function () { return sel.value; }, set: function (v) { sel.value = v; } };
   }
   function radios(opts) {
     var name = 'trpl-r' + (++uid), value = opts.value;
@@ -385,7 +434,7 @@ window.TRPL_ORG = {
       wrap.appendChild(h('label.radio', [r, h('span', { html: o[1] })]));
       return r;
     });
-    return { el: wrap, input: inputs[0] || wrap, get: function () { return value; }, set: function (v) { value = v; inputs.forEach(function (r) { r.checked = r.value === v; }); } };
+    return { el: wrap, input: inputs[0] || wrap, type: 'string', get: function () { return value; }, set: function (v) { value = v; inputs.forEach(function (r) { r.checked = r.value === v; }); } };
   }
   function checks(opts) {
     var value = opts.value || [];
@@ -406,7 +455,7 @@ window.TRPL_ORG = {
     var c = h('input', { type: 'checkbox', checked: !!opts.value });
     c.addEventListener('change', function () { opts.onChange && opts.onChange(c.checked); });
     var el = h('label.radio.single', [c, h('span', { html: labelText })]);
-    return { el: el, input: c, get: function () { return c.checked; }, set: function (v) { c.checked = !!v; } };
+    return { el: el, input: c, type: 'bool', get: function () { return c.checked; }, set: function (v) { c.checked = !!v; } };
   }
   var FILING = [['single', 'Single'], ['mfj', 'Married filing jointly'], ['hoh', 'Head of household'], ['mfs', 'Married filing separately']];
   var BRACKETS = function () { return T().marginalRates.map(function (r) { return [String(r), pct(r, 0) + ' bracket']; }); };
@@ -507,7 +556,10 @@ window.TRPL_ORG = {
     root.appendChild(head);
     var body = h('div.body');
     root.appendChild(body);
-    try { def.render(body, GT, opts); }
+    try {
+      def.render(body, GT, opts);
+      if (def.share !== false && GT.shareBar) body.appendChild(GT.shareBar(name, root, def.title, def.getState));
+    }
     catch (e) { body.appendChild(callout('warn', 'This tool could not load. Please refresh the page or contact ' + ORG().contactEmail + '.')); if (window.console) console.error('[TRPL Giving Tools]', name, e); }
     if (def.disclaimer !== false) root.appendChild(disclaimer(def.disclaimerExtra));
     GT.mounted.push({ name: name, el: el });
@@ -541,6 +593,328 @@ window.TRPL_ORG = {
     advisorQuestions: advisorQuestions, disclaimer: disclaimer, toolUrl: toolUrl, contactLine: contactLine, intentCTA: intentCTA
   });
 })();
+
+/* ============================================================================
+ * TRPL Giving Tools — SHARE, PDF & PAPERWORK HELPERS
+ * Shareable scenarios (state <-> URL), the on-demand pdf-lib loader, a small
+ * flowing-document builder, AcroForm filling, the advisor one-pager, and the
+ * Heritage Society statement of intent. Loaded after core.js; guarded.
+ * ========================================================================== */
+(function (GT) {
+  if (GT.shareBar) return;
+  var h = GT.h, ORG = GT.ORG, T = GT.T, button = GT.button, copyButton = GT.copyButton, field = GT.field, section = GT.section, numberInput = GT.numberInput, checkbox = GT.checkbox;
+
+  /* ---- Shareable scenarios: ?tool.key=value ------------------------------ */
+  function state(name, defaults) {
+    var out = {}; Object.keys(defaults).forEach(function (k) { out[k] = Array.isArray(defaults[k]) ? defaults[k].slice() : defaults[k]; });
+    try {
+      var q = new URLSearchParams(location.search), pre = name + '.';
+      q.forEach(function (v, k) {
+        if (k.indexOf(pre) !== 0) return; var key = k.slice(pre.length); if (!(key in defaults)) return;
+        var d = defaults[key];
+        if (Array.isArray(d)) out[key] = v ? v.split(',') : [];
+        else if (typeof d === 'boolean') out[key] = v === '1' || v === 'true';
+        else if (typeof d === 'number') { var n = parseFloat(v); if (!isNaN(n)) out[key] = n; }
+        else out[key] = v;
+      });
+    } catch (e) { }
+    return out;
+  }
+  function applyState(ctl, s) {
+    Object.keys(ctl).forEach(function (k) {
+      var c = ctl[k]; if (!c || !c.set || s[k] == null) return;
+      try { c.set(c.type === 'bool' ? !!s[k] : c.type === 'number' ? Number(s[k]) : String(s[k])); } catch (e) { }
+    });
+  }
+  function shareUrl(name, s) {
+    var q = new URLSearchParams();
+    Object.keys(s).forEach(function (k) { var v = s[k]; if (v == null || v === '' || typeof v === 'function') return; q.set(name + '.' + k, Array.isArray(v) ? v.join(',') : typeof v === 'boolean' ? (v ? '1' : '0') : String(v)); });
+    return location.origin + location.pathname + '?' + q.toString();
+  }
+  function shareButton(name, getState) { return copyButton(function () { return shareUrl(name, getState()); }, 'Copy link to this scenario'); }
+
+  /* ---- PDF plumbing ------------------------------------------------------ */
+  function loadPdfLib() {
+    return new Promise(function (res, rej) {
+      if (window.PDFLib) return res(window.PDFLib);
+      var sc = document.createElement('script'); sc.src = GT.base + 'vendor/pdf-lib.min.js'; sc.async = true;
+      sc.onload = function () { res(window.PDFLib); }; sc.onerror = function () { rej(new Error('PDF library failed to load')); };
+      document.head.appendChild(sc);
+    });
+  }
+  function downloadBytes(bytes, filename) {
+    var blob = new Blob([bytes], { type: 'application/pdf' }), url = URL.createObjectURL(blob);
+    var a = h('a', { href: url, download: filename }); document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  }
+  function stripHtml(x) { var d = document.createElement('div'); d.innerHTML = x; return (d.textContent || '').replace(/\s+/g, ' ').trim(); }
+  /* The built-in PDF fonts speak WinAnsi only; map the symbols we use and drop the rest. */
+  var GLYPH_MAP = { '\u2605': '*', '\u2713': '-', '\u2714': '-', '\u2248': '~', '\u2192': '->', '\u2190': '<-', '\u2264': '<=', '\u2265': '>=', '\u2212': '-', '\u2153': '1/3', '\u2154': '2/3', '\u00bd': '1/2', '\u00bc': '1/4', '\u00be': '3/4', '\u2009': ' ', '\u202f': ' ', '\u00a0': ' ' };
+  var WINANSI_EXTRA = '\u2018\u2019\u201a\u201c\u201d\u201e\u2020\u2021\u2022\u2026\u2030\u2039\u203a\u20ac\u2122\u2013\u2014\u02dc\u02c6\u0152\u0153\u0160\u0161\u0178\u017d\u017e\u0192';
+  function pdfSafe(text) {
+    return String(text).split('').map(function (ch) {
+      if (GLYPH_MAP[ch] != null) return GLYPH_MAP[ch];
+      var c = ch.charCodeAt(0); return (c < 0x100 || WINANSI_EXTRA.indexOf(ch) >= 0) ? ch : '';
+    }).join('');
+  }
+  function today() { return new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }); }
+
+  /* Simple flowing document. blocks: {h}, {p}, {small}, {kv:[[k,v]]}, {ul:[]}, {sig:[labels]}, {gap:n} */
+  function makePDF(opts) {
+    return loadPdfLib().then(function (P) {
+      return P.PDFDocument.create().then(function (doc) {
+        return Promise.all([doc.embedFont(P.StandardFonts.Helvetica), doc.embedFont(P.StandardFonts.HelveticaBold)]).then(function (fonts) {
+          var F = fonts[0], B = fonts[1], W = 612, H = 792, M = 54, y, page, o = ORG(), t = T();
+          var ink = P.rgb(0.145, 0.157, 0.165), orange = P.rgb(0.906, 0.502, 0.365), gray = P.rgb(0.31, 0.314, 0.32), line = P.rgb(0.85, 0.83, 0.78);
+          function wrap(text, font, size, width) {
+            var words = pdfSafe(text).split(/\s+/), lines = [], cur = '';
+            words.forEach(function (w) { var tryLine = cur ? cur + ' ' + w : w; if (font.widthOfTextAtSize(tryLine, size) > width && cur) { lines.push(cur); cur = w; } else cur = tryLine; });
+            if (cur) lines.push(cur); return lines;
+          }
+          function footer() {
+            var fy = M - 14;
+            page.drawLine({ start: { x: M, y: fy + 18 }, end: { x: W - M, y: fy + 18 }, thickness: 0.5, color: line });
+            var ft = opts.footer || (o.name + ' · ' + o.taxStatus + ' · EIN ' + o.ein + ' · ' + o.address + ' · ' + o.contactEmail);
+            wrap(ft, F, 7.5, W - 2 * M - 60).slice(0, 2).forEach(function (ln, i) { page.drawText(ln, { x: M, y: fy + 6 - i * 9, size: 7.5, font: F, color: gray }); });
+            page.drawText('Page ' + doc.getPageCount(), { x: W - M - 40, y: fy + 6, size: 7.5, font: F, color: gray });
+          }
+          function header() {
+            page.drawText(pdfSafe(o.name).toUpperCase(), { x: M, y: y, size: 9, font: B, color: orange }); y -= 16;
+            wrap(opts.title, B, 18, W - 2 * M).forEach(function (ln) { page.drawText(ln, { x: M, y: y - 6, size: 18, font: B, color: ink }); y -= 22; });
+            y -= 6;
+            if (opts.subtitle) { page.drawText(pdfSafe(opts.subtitle), { x: M, y: y, size: 9.5, font: F, color: gray }); y -= 12; }
+            page.drawLine({ start: { x: M, y: y - 4 }, end: { x: W - M, y: y - 4 }, thickness: 1.5, color: ink }); y -= 22;
+          }
+          function newPage() { page = doc.addPage([W, H]); y = H - M; if (doc.getPageCount() === 1) header(); else y -= 10; }
+          function ensure(n) { if (y - n < M + 30) { footer(); newPage(); } }
+          function para(text, size, font, color, x, width) {
+            size = size || 10.5; font = font || F; x = x || M; width = width || (W - 2 * M);
+            wrap(stripHtml(text), font, size, width).forEach(function (ln) { ensure(size + 4); page.drawText(ln, { x: x, y: y, size: size, font: font, color: color || ink }); y -= size * 1.42; });
+          }
+          newPage();
+          (opts.blocks || []).forEach(function (b) {
+            if (!b) return;
+            if (b.h) { ensure(30); y -= 6; page.drawText(pdfSafe(String(b.h)).toUpperCase(), { x: M, y: y, size: 10, font: B, color: orange }); y -= 16; }
+            else if (b.p) { para(b.p); y -= 6; }
+            else if (b.small) { para(b.small, 8.5, F, gray); y -= 4; }
+            else if (b.kv) {
+              b.kv.forEach(function (row) {
+                ensure(16); var k = stripHtml(row[0]), v = stripHtml(row[1] == null ? '' : row[1]);
+                var kl = wrap(k, F, 10, 250), vl = wrap(v || '—', B, 10, W - 2 * M - 270);
+                var start = y;
+                kl.forEach(function (ln, i) { page.drawText(ln, { x: M, y: start - i * 13, size: 10, font: F, color: gray }); });
+                vl.forEach(function (ln, i) { page.drawText(ln, { x: M + 270, y: start - i * 13, size: 10, font: B, color: ink }); });
+                y = start - Math.max(kl.length, vl.length) * 13 - 3;
+              }); y -= 6;
+            }
+            else if (b.ul) { b.ul.forEach(function (it) { ensure(16); page.drawText('•', { x: M + 4, y: y, size: 10.5, font: F, color: orange }); wrap(stripHtml(it), F, 10.5, W - 2 * M - 18).forEach(function (ln) { ensure(15); page.drawText(ln, { x: M + 18, y: y, size: 10.5, font: F, color: ink }); y -= 15; }); y -= 2; }); y -= 6; }
+            else if (b.sig) { ensure(60); y -= 24; b.sig.forEach(function (lab, i) { var x = M + i * 260; page.drawLine({ start: { x: x, y: y }, end: { x: x + 230, y: y }, thickness: 0.8, color: ink }); page.drawText(pdfSafe(lab), { x: x, y: y - 12, size: 8.5, font: F, color: gray }); }); y -= 36; }
+            else if (b.gap) { y -= b.gap; }
+          });
+          if (opts.disclaimer !== false) {
+            ensure(80); y -= 8; page.drawLine({ start: { x: M, y: y }, end: { x: W - M, y: y }, thickness: 0.5, color: line }); y -= 14;
+            para(o.name + ' is not a tax, legal, or financial advisor. This document contains general information and estimates prepared from figures you entered; it is not advice. Please review it with your own attorney, accountant, or financial advisor. Federal figures reflect tax year ' + t.taxYear + ' (reviewed ' + t.lastReviewed + '). Prepared ' + today() + ' with the Library’s giving tools at ' + o.urls.tools + '.', 8, F, gray);
+          }
+          footer();
+          return doc.save();
+        });
+      });
+    });
+  }
+  /* Fill a bundled AcroForm. fields: { 'Field name': 'text' | true }. opts.stamp draws a draft notice on page 1. */
+  function fillForm(file, fields, opts) {
+    opts = opts || {};
+    return Promise.all([loadPdfLib(), fetch(GT.base + file).then(function (r) { if (!r.ok) throw new Error('form not found'); return r.arrayBuffer(); })]).then(function (rs) {
+      var P = rs[0];
+      return P.PDFDocument.load(rs[1]).then(function (doc) {
+        var form = doc.getForm();
+        Object.keys(fields).forEach(function (k) {
+          var v = fields[k]; if (v == null || v === '') return;
+          try { if (v === true) form.getCheckBox(k).check(); else { var f = form.getTextField(k); f.setText(pdfSafe(v)); if (opts.fontSize) f.setFontSize(opts.fontSize); } }
+          catch (e) { if (window.console) console.warn('[TRPL Giving Tools] form field not found:', k); }
+        });
+        return doc.embedFont(P.StandardFonts.HelveticaBold).then(function (fnt) {
+          if (opts.stamp) { var pg = doc.getPages()[0]; pg.drawText(pdfSafe(opts.stamp), { x: 36, y: pg.getHeight() - 22, size: 8, font: fnt, color: P.rgb(0.82, 0.46, 0.34) }); }
+          return doc.save();
+        });
+      });
+    });
+  }
+  /* Turn multi-line letter text into document blocks (one block per line, gaps for blank lines) */
+  function letterBlocks(text) { return String(text).split('\n').map(function (ln) { return ln.trim() ? { p: ln } : { gap: 8 }; }); }
+  function draftStamp() { return 'DRAFT — prepared with the Library’s giving tools on ' + new Date().toLocaleDateString('en-US') + '. Estimates only; review with your tax preparer before filing.'; }
+
+  /* ---- Advisor one-pager, read from what the tool is showing ------------- */
+  function visible(el) { return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length); }
+  function summaryFromDOM(root) {
+    var inputs = [], results = [], notes = [], questions = [];
+    Array.prototype.forEach.call(root.querySelectorAll('.trpl-field'), function (f) {
+      if (!visible(f) || f.closest('.trpl-sharebar')) return;
+      var lab = f.querySelector('.trpl-label'); if (!lab) return;
+      var val = '', sel = f.querySelector('select'), inp = f.querySelector('input:not([type=radio]):not([type=checkbox]), textarea');
+      if (sel) val = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
+      else if (f.querySelector('input[type=radio], input[type=checkbox]')) val = Array.prototype.map.call(f.querySelectorAll('input:checked'), function (c) { var sp = c.parentNode.querySelector('span'); return sp ? stripHtml(sp.innerHTML) : ''; }).join('; ') || '—';
+      else if (inp) { var pre = f.querySelector('.trpl-prefix'), suf = f.querySelector('.trpl-suffix'); val = inp.value ? (pre ? pre.textContent : '') + inp.value + (suf ? suf.textContent : '') : ''; }
+      if (val !== '') inputs.push([lab.textContent, val]);
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('.trpl-stat'), function (st) {
+      if (!visible(st)) return; var sub = st.querySelector('.trpl-stat-sub');
+      results.push([st.querySelector('.trpl-stat-label').textContent, st.querySelector('.trpl-stat-value').textContent + (sub ? ' — ' + stripHtml(sub.innerHTML) : '')]);
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('.trpl-textout'), function (x) { if (visible(x) && x.textContent.trim()) notes.push(x.textContent.trim()); });
+    function textOf(el) { var c = el.cloneNode(true); Array.prototype.forEach.call(c.querySelectorAll('.trpl-actions, .trpl-btn, .trpl-tag'), function (x) { x.parentNode.removeChild(x); }); return Array.prototype.map.call(c.querySelectorAll('h4, p, li'), function (x) { return stripHtml(x.innerHTML); }).filter(Boolean).join(' ') || stripHtml(c.innerHTML); }
+    Array.prototype.forEach.call(root.querySelectorAll('.trpl-callout, .trpl-rec'), function (c) { if (visible(c)) notes.push(textOf(c)); });
+    Array.prototype.forEach.call(root.querySelectorAll('.trpl-advisor li'), function (li) { questions.push(stripHtml(li.innerHTML)); });
+    return { inputs: inputs, results: results, notes: notes, questions: questions };
+  }
+  function advisorPDF(root, title) {
+    var o = ORG(), sm = summaryFromDOM(root), blocks = [];
+    blocks.push({ p: 'A summary of the scenario explored with the Library’s “' + title + '” tool, prepared to share with a financial, tax, or legal advisor.' });
+    if (sm.inputs.length) { blocks.push({ h: 'What was entered' }); blocks.push({ kv: sm.inputs }); }
+    if (sm.results.length) { blocks.push({ h: 'What the tool showed' }); blocks.push({ kv: sm.results }); }
+    if (sm.notes.length) { blocks.push({ h: 'Notes' }); blocks.push({ ul: sm.notes.slice(0, 8) }); }
+    if (sm.questions.length) { blocks.push({ h: 'Questions to discuss with your advisor' }); blocks.push({ ul: sm.questions }); }
+    blocks.push({ h: 'About the Library' }); blocks.push({ kv: [['Legal name', o.name], ['Tax ID (EIN)', o.ein], ['Address', o.address], ['Gift planning contact', (o.contactName ? o.contactName + ', ' : '') + o.contactEmail]] });
+    return makePDF({ title: title, subtitle: 'Advisor summary · prepared ' + today(), blocks: blocks });
+  }
+  function shareBar(name, root, title, getState) {
+    var status = h('p.help');
+    var pdfBtn = button('Download advisor summary (PDF)', function () {
+      pdfBtn.disabled = true; status.textContent = 'Preparing your summary…';
+      advisorPDF(root, title).then(function (bytes) { downloadBytes(bytes, (title.replace(/[^a-z0-9]+/gi, '-') + '-summary.pdf').toLowerCase()); status.textContent = 'Downloaded. Print it or attach it to an email to your advisor.'; })
+        .catch(function (e) { status.textContent = 'Sorry — the PDF could not be prepared (' + e.message + '). Use Print instead.'; })
+        .then(function () { pdfBtn.disabled = false; });
+    }, 'highlight');
+    return h('div.sharebar', [
+      h('div.eyebrow', 'Save or share this'),
+      h('div.actions', [pdfBtn, button('Print', function () { window.print(); }, 'secondary'), getState ? shareButton(name, getState) : null]),
+      status
+    ]);
+  }
+
+  /* ---- Heritage Society statement of intent ------------------------------ */
+  function intentStatement(opts) {
+    var o = ORG(); opts = opts || {};
+    var blocks = [
+      { p: 'I/we are pleased to share that the ' + o.name + ' has been included in my/our estate plans through ' + (opts.kind || 'a gift in my/our will or trust') + '. This statement is provided so the Library can plan for the future and recognize my/our commitment through the ' + o.legacySociety + '. It is an expression of intent, not a legal obligation, and may be changed at any time.' },
+      { h: 'Donor' }, { kv: [['Name(s)', opts.name], ['Address', opts.address], ['Email / phone', opts.contact]] },
+      { h: 'Gift' }, { kv: [['Type of gift', opts.kind], ['Description (optional)', opts.description], ['Estimated value (optional)', opts.value || 'Prefer not to say'], ['Purpose', opts.purpose || 'General charitable purposes'], ['Recognition', opts.anonymous ? 'Please keep my/our gift anonymous' : 'You may list my/our name(s) in ' + o.legacySociety + ' recognition']] },
+      { h: 'Documents' }, { p: 'Where possible, a copy of the relevant page of the will, trust, or beneficiary designation is attached or will be provided. The Library keeps this information confidential.' },
+      { sig: ['Donor signature', 'Date'] }, { sig: ['Second donor signature (if joint)', 'Date'] },
+      { small: 'Return to: ' + o.name + ', ' + o.address + ' · ' + o.contactEmail + (o.urls.intentForm ? ' · or complete the online form at ' + o.urls.intentForm : '') }
+    ];
+    return makePDF({ title: o.legacySociety + ' statement of intent', subtitle: 'Confidential · ' + o.name, blocks: blocks, disclaimer: false });
+  }
+  function intentStatementSection(getKind, getDescription) {
+    var o = ORG(), st = h('p.help');
+    function txt(ph) { var i = numberInput({ value: '', placeholder: ph }); i.input.type = 'text'; return i; }
+    var name = txt('Name(s)'), addr = txt('Street, city, state, ZIP'), contact = txt('Email or phone'), value = txt('Optional'), anon = checkbox('Keep my gift anonymous in any recognition');
+    var btn = button('Download statement of intent (PDF)', function () {
+      btn.disabled = true; st.textContent = 'Preparing…';
+      intentStatement({ name: name.input.value, address: addr.input.value, contact: contact.input.value, value: value.input.value, anonymous: anon.get(), kind: getKind ? getKind() : '', description: getDescription ? getDescription() : '' })
+        .then(function (b) { downloadBytes(b, 'heritage-society-statement-of-intent.pdf'); st.innerHTML = 'Downloaded. Sign it and return it to <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a>' + (o.urls.intentForm ? ', or use the <a href="' + o.urls.intentForm + '" target="_blank" rel="noopener">online form</a>' : '') + '.'; })
+        .catch(function (e) { st.textContent = 'Could not build the PDF (' + e.message + ').'; }).then(function () { btn.disabled = false; });
+    }, 'primary');
+    return section('Printable statement of intent', [
+      h('p.help', 'Prefer paper? Download a signable ' + o.legacySociety + ' statement to keep with your estate documents and mail or email to the Library.'),
+      h('div.grid', [field('Name(s)', name), field('Mailing address', addr), field('Email or phone', contact), field('Estimated value', value, 'Entirely optional — it helps the Library plan.')]),
+      h('div', [anon.el]), h('div.actions', [btn]), st
+    ]);
+  }
+
+  Object.assign(GT, { pdfSafe: pdfSafe, letterBlocks: letterBlocks, state: state, applyState: applyState, shareUrl: shareUrl, shareButton: shareButton, loadPdfLib: loadPdfLib, downloadBytes: downloadBytes, stripHtml: stripHtml, makePDF: makePDF, fillForm: fillForm, draftStamp: draftStamp, summaryFromDOM: summaryFromDOM, advisorPDF: advisorPDF, shareBar: shareBar, intentStatement: intentStatement, intentStatementSection: intentStatementSection });
+})(window.TRPLGivingTools);
+
+/* @tool Gift Acknowledgment Letters (staff)
+ * Internal tool for the development team: produces IRS-compliant
+ * acknowledgment letters for each gift type (cash, quid pro quo, stock, QCD,
+ * DAF grant, estate distribution, matching gift) and the North Dakota
+ * endowment qualification letter donors need for Schedule ND-1QEC. */
+(function (GT) {
+  var h = GT.h, T = GT.T, ORG = GT.ORG, money = GT.money;
+
+  GT.register('acknowledgments', {
+    staff: true,
+    title: 'Gift acknowledgment letters',
+    intro: 'For Library staff. Choose the gift type, fill in the details, and download a letter that says what the IRS requires — and nothing it forbids. Publication 1771 rules are built in.',
+    disclaimerExtra: 'Internal drafting aid. Letters should go out on letterhead under the signer’s review; the development office remains responsible for substantiation and for the accuracy of dates, amounts, and fund names.',
+    render: function (root) {
+      var o = ORG(), t = T();
+      var s = GT.state('acknowledgments', { kind: 'cash', amount: 1000, benefits: 0, purpose: '' }); this.getState = function () { return s; };
+      var KINDS = [
+        ['cash', 'Cash, check, or card — no benefits received'],
+        ['quid', 'Gift with benefits (event tickets, membership perks, auction)'],
+        ['stock', 'Securities (stock, mutual fund shares)'],
+        ['qcd', 'IRA qualified charitable distribution'],
+        ['daf', 'Donor-advised fund grant'],
+        ['estate', 'Estate or trust distribution'],
+        ['match', 'Employer matching gift'],
+        (o.features && o.features.ndCredit) ? ['ndletter', 'North Dakota endowment qualification letter (for Schedule ND-1QEC)'] : null
+      ].filter(Boolean);
+      function txt(ph, type) { var i = GT.numberInput({ value: '', placeholder: ph }); i.input.type = type || 'text'; return i; }
+      var ctl = {
+        kind: GT.radios({ stacked: true, options: KINDS, value: s.kind, onChange: function (v) { s.kind = v; toggle(); } }),
+        amount: GT.moneyInput({ value: s.amount, onChange: function (v) { s.amount = v; } }),
+        benefits: GT.moneyInput({ value: s.benefits, onChange: function (v) { s.benefits = v; } })
+      };
+      var donor = txt('Full legal name(s) of donor'), addr = txt('Street, city, state, ZIP'), salutation = txt('e.g. Dear Mr. and Mrs. Roosevelt'), date = txt('', 'date'),
+          desc = txt('e.g. 100 shares of Apple Inc. common stock'), benefitsDesc = txt('e.g. two tickets to the Founders’ Dinner'), purpose = txt('e.g. the Library’s endowment; education programs'),
+          signer = txt('e.g. Jane Doe'), signerTitle = txt('e.g. Chief Development Officer'), extra = txt('e.g. the ' + o.name + ' Endowment Fund'), thirdParty = txt('e.g. Fidelity Charitable; the Estate of John Doe; Acme Corp.');
+      GT.applyState(ctl, s);
+      var amountF = GT.field('Gift amount', ctl.amount), benefitsF = GT.field('Fair market value of benefits provided', ctl.benefits, 'Required when the donor received something in return. The deductible amount is the gift minus this value.'),
+          descF = GT.field('Description of securities', desc, 'Number of shares and issuer. Do <b>not</b> state a dollar value — the donor’s appraisal or broker sets that.'),
+          benefitsDescF = GT.field('Describe the benefits', benefitsDesc), fundF = GT.field('Name of the qualified endowment fund', extra), thirdF = GT.field('Sponsor / estate / employer name', thirdParty);
+      function toggle() {
+        var k = s.kind;
+        amountF.style.display = (k === 'stock' || k === 'ndletter') ? 'none' : '';
+        benefitsF.style.display = k === 'quid' ? '' : 'none'; benefitsDescF.style.display = k === 'quid' ? '' : 'none';
+        descF.style.display = k === 'stock' ? '' : 'none';
+        fundF.style.display = k === 'ndletter' ? '' : 'none';
+        thirdF.style.display = (k === 'daf' || k === 'estate' || k === 'match') ? '' : 'none';
+      }
+      var status = h('p.help'), preview = h('div.textout');
+
+      function fmtDate(v) { return v ? new Date(v + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '[date]'; }
+      function body() {
+        var k = s.kind, name = donor.input.value || '[Donor name]', d = fmtDate(date.input.value), amt = money(s.amount), sal = salutation.input.value || ('Dear ' + name + ','), p = purpose.input.value;
+        var noGoods = 'No goods or services were provided in exchange for this contribution.';
+        var forP = p ? ' designated for ' + p : '';
+        var paras = [];
+        if (k === 'cash') paras = ['Thank you for your generous gift of ' + amt + forP + ', received on ' + d + '. ' + o.missionLine, noGoods, 'Please keep this letter as your receipt for tax purposes.'];
+        else if (k === 'quid') { var ded = Math.max(0, s.amount - s.benefits); paras = ['Thank you for your payment of ' + amt + forP + ', received on ' + d + '.', 'In return for your contribution, you received ' + (benefitsDesc.input.value || '[description of benefits]') + ', which the Library values at ' + money(s.benefits) + '. Under federal tax law, the amount of your contribution that is deductible is limited to the excess of your payment over the value of the goods and services provided: ' + money(ded) + '.', 'Please keep this letter as your receipt.']; }
+        else if (k === 'stock') paras = ['Thank you for your generous gift of ' + (desc.input.value || '[number of shares and issuer]') + forP + ', received in the Library’s brokerage account on ' + d + '.', noGoods, 'As required by the IRS, this letter describes the securities but does not state their value; your deduction is based on the fair market value on the date of the gift, and gifts over $500 are reported on Form 8283. Please keep this letter with your records.'];
+        else if (k === 'qcd') paras = ['Thank you for your gift of ' + amt + forP + ', received on ' + d + ' as a distribution from your IRA. We understand you intend this to be a qualified charitable distribution under Internal Revenue Code § 408(d)(8).', 'The ' + o.name + ' is a public charity described in § 170(b)(1)(A) and is eligible to receive qualified charitable distributions. ' + noGoods, 'Please keep this letter with your records; your IRA custodian will report the distribution on Form 1099-R.'];
+        else if (k === 'daf') paras = ['Thank you for recommending a grant of ' + amt + forP + ' from your donor-advised fund at ' + (thirdParty.input.value || '[sponsor]') + ', received on ' + d + '. Your continued support means a great deal to the Library.', 'Because this grant came from a donor-advised fund, no additional tax deduction is available to you and this letter is not a tax receipt; your deduction was taken when you contributed to the fund. No goods or services were provided to you in connection with this grant, and the Library has not used it to satisfy any pledge or provide any benefit to you.'];
+        else if (k === 'estate') paras = ['On behalf of the ' + o.name + ', thank you for the distribution of ' + amt + forP + ' from ' + (thirdParty.input.value || '[the Estate or Trust]') + ', received on ' + d + '. We are honored that ' + name + ' chose to leave a lasting legacy at the Library.', noGoods + ' The Library is a public charity described in Internal Revenue Code § 170(b)(1)(A); this letter may serve as the receipt for the estate’s or trust’s charitable deduction under § 2055 or § 642(c).'];
+        else if (k === 'match') paras = ['Thank you for the matching gift of ' + amt + ' from ' + (thirdParty.input.value || '[employer]') + ', received on ' + d + ', in recognition of the generosity of ' + name + '. ' + noGoods, 'The employee’s own gift has been acknowledged separately; this letter serves as the receipt for the corporate match.'];
+        else if (k === 'ndletter') paras = ['This letter confirms that the ' + o.name + ' is a nonprofit corporation incorporated in and with a physical presence in ' + o.stateName + ', exempt from federal income tax under Internal Revenue Code § 501(c)(3) and eligible to receive contributions deductible under § 170(c).', 'It further confirms that the ' + (extra.input.value || '[name of endowment fund]') + ', to which your contribution of ' + amt + ' was made on ' + d + ', is a qualified endowment fund within the meaning of N.D.C.C. § 57-38-01.21: a permanent, irrevocable fund held by the Foundation, comprised of cash, securities, mutual funds, or other investment assets, established for a charitable purpose, and from which only the income generated by, or the increase in value of, the contributed assets may be expended.', 'This letter is provided to support your claim of the North Dakota charitable giving tax credit on Schedule ND-1QEC. Please attach it to your return as the schedule requires. ' + noGoods];
+        var sign = (signer.input.value || '[Signer]') + '\n' + (signerTitle.input.value || '[Title]') + '\n' + o.name;
+        return { salutation: sal, paras: paras, sign: sign, name: name, address: addr.input.value };
+      }
+      function asText() { var b = body(); return [new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), '', b.name + (b.address ? '\n' + b.address : ''), '', b.salutation, '', b.paras.join('\n\n'), '', 'With gratitude,', '', '', b.sign].join('\n'); }
+      function refresh() { preview.textContent = asText(); }
+      [donor, addr, salutation, date, desc, benefitsDesc, purpose, signer, signerTitle, extra, thirdParty].forEach(function (i) { i.input.addEventListener('input', refresh); });
+      ctl.amount.input.addEventListener('input', refresh); ctl.benefits.input.addEventListener('input', refresh);
+      ctl.kind.el.addEventListener('change', refresh);
+      var pdfBtn = GT.button('Download letter (PDF)', function () {
+        var b = body(); pdfBtn.disabled = true; status.textContent = 'Preparing…';
+        GT.makePDF({ title: s.kind === 'ndletter' ? 'Qualified endowment fund confirmation' : 'Thank you for your gift', subtitle: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+          blocks: GT.letterBlocks(b.name + (b.address ? '\n' + b.address : '') + '\n\n' + b.salutation + '\n\n' + b.paras.join('\n\n') + '\n\nWith gratitude,\n\n\n' + b.sign), disclaimer: false })
+          .then(function (bytes) { GT.downloadBytes(bytes, 'acknowledgment-' + s.kind + '.pdf'); status.textContent = 'Downloaded. Print on letterhead or attach to email.'; })
+          .catch(function (e) { status.textContent = 'Could not build the PDF (' + e.message + ').'; }).then(function () { pdfBtn.disabled = false; });
+      }, 'primary');
+
+      GT.append(root, [
+        GT.callout('warn', '<b>Staff tool.</b> Not intended for donors. The rules baked in: acknowledgments for gifts of $250+ must state whether goods or services were provided; “quid pro quo” letters are required for payments over $75 and must give a good-faith value of the benefits; stock letters describe but never value the shares; DAF letters must not offer a deduction; QCD letters confirm no benefits were provided.'),
+        GT.field('Gift type', ctl.kind),
+        h('div.grid', [GT.field('Donor name(s)', donor), GT.field('Address', addr), GT.field('Salutation', salutation), GT.field('Date received', date), amountF, benefitsF, benefitsDescF, descF, thirdF, fundF, GT.field('Purpose or designation (optional)', purpose), GT.field('Signer', signer), GT.field('Signer title', signerTitle)]),
+        GT.section('Letter', [preview, h('div.actions', [pdfBtn, GT.copyButton(asText, 'Copy letter text')]), status]),
+        GT.callout('info', 'Reference: IRS Publication 1771, <i>Charitable Contributions — Substantiation and Disclosure Requirements</i>; N.D.C.C. § 57-38-01.21 for the endowment letter. Confirm the endowment fund’s qualified status with counsel before issuing the North Dakota letter.')
+      ]);
+      toggle(); refresh();
+    }
+  });
+})(window.TRPLGivingTools);
 
 /* @tool Beneficiary Designation Guide
  * Step-by-step instructions for naming the Foundation as a beneficiary of
@@ -598,6 +972,7 @@ window.TRPL_ORG = {
           h('p.help', 'The pattern: leave the Library the assets family would pay income tax on, and leave family the assets that pass tax-free. Federal estate tax applies only above ' + money(t.estate.exemption) + ' per person in ' + t.taxYear + '; charitable bequests are fully deductible from it.')
         ]),
         GT.intentCTA(),
+        GT.intentStatementSection(function () { return 'a beneficiary designation (' + ASSETS[s.asset].label + ')'; }),
         GT.advisorQuestions([
           'Which of my accounts is the most heavily taxed if it goes to my children, and would that be the better one to leave to charity?',
           'Are my beneficiary designations consistent with my will and trust? (Designations override the will.)',
@@ -623,12 +998,12 @@ window.TRPL_ORG = {
     disclaimerExtra: 'Sample language only. Your attorney should adapt it to your state’s law and your overall plan. The Foundation does not draft or review estate documents.',
     render: function (root) {
       var o = ORG(), t = T();
-      var s = { kind: 'pct', pct: 10, amount: 25000, asset: '', purpose: 'unrestricted', program: '', contingent: false, vehicle: 'will' };
+      var s = GT.state('bequest', { kind: 'pct', pct: 10, amount: 25000, asset: '', purpose: 'unrestricted', program: '', contingent: false, vehicle: 'will' }); this.getState = function () { return s; };
       var textOut = h('div.textout', { 'aria-live': 'polite' });
       var pctCtl = GT.numberInput({ min: 1, max: 100, value: s.pct, suffix: '%', onChange: function (v) { s.pct = v; gen(); } });
       var amtCtl = GT.moneyInput({ value: s.amount, onChange: function (v) { s.amount = v; gen(); } });
-      var assetCtl = GT.numberInput({ value: '', placeholder: 'e.g. 200 shares of XYZ stock; my cabin at …' }); assetCtl.input.type = 'text'; assetCtl.input.addEventListener('input', function () { s.asset = assetCtl.input.value; gen(); });
-      var programCtl = GT.numberInput({ value: '', placeholder: 'e.g. education programs for students and teachers' }); programCtl.input.type = 'text'; programCtl.input.addEventListener('input', function () { s.program = programCtl.input.value; gen(); });
+      var assetCtl = GT.numberInput({ value: s.asset, placeholder: 'e.g. 200 shares of XYZ stock; my cabin at …' }); assetCtl.input.type = 'text'; assetCtl.input.addEventListener('input', function () { s.asset = assetCtl.input.value; gen(); });
+      var programCtl = GT.numberInput({ value: s.program, placeholder: 'e.g. education programs for students and teachers' }); programCtl.input.type = 'text'; programCtl.input.addEventListener('input', function () { s.program = programCtl.input.value; gen(); });
       var pctField = GT.field('Percentage', pctCtl, 'Percentages keep pace with your estate and are easy for family to understand. Many donors choose 5% or 10%.');
       var amtField = GT.field('Dollar amount', amtCtl);
       var assetField = GT.field('Describe the asset', assetCtl);
@@ -644,7 +1019,7 @@ window.TRPL_ORG = {
         purpose: GT.radios({ stacked: true, options: [
           ['unrestricted', '<b>Wherever the need is greatest</b> — the most useful kind of gift (recommended)'],
           ['program', '<b>A specific program or purpose</b>']], value: s.purpose, onChange: function (v) { s.purpose = v; show(); gen(); } }),
-        contingent: GT.checkbox('Make this a <b>contingent</b> gift — the Library receives it only if my named beneficiaries do not survive me', { value: false, onChange: function (v) { s.contingent = v; gen(); } })
+        contingent: GT.checkbox('Make this a <b>contingent</b> gift — the Library receives it only if my named beneficiaries do not survive me', { value: s.contingent, onChange: function (v) { s.contingent = v; gen(); } })
       };
       function show() {
         pctField.style.display = s.kind === 'pct' || s.kind === 'residue' ? '' : 'none';
@@ -695,6 +1070,7 @@ window.TRPL_ORG = {
         h('div.infocard', [h('b', 'The details your attorney will need'), h('span', 'Legal name: ' + o.name), h('span', 'Tax ID (EIN): ' + o.ein), h('span', 'Address: ' + o.address), h('span', 'Status: ' + o.taxStatus)]),
         GT.callout('info', '<p><b>Three things worth knowing.</b> A gift in your will is fully deductible from your taxable estate. It is revocable — you can change it at any time. And you don’t need a new will to add it: a short amendment (a “codicil”) usually does the job.</p>'),
         GT.intentCTA(),
+        GT.intentStatementSection(function () { return s.vehicle === 'trust' ? 'a provision in my/our living trust' : 'a bequest in my/our will'; }, text),
         GT.advisorQuestions([
           'Should this be a percentage, a fixed amount, or a share of the residue, given the rest of my plan?',
           'Would leaving retirement-account assets to the Library and other assets to family reduce the taxes my heirs pay?',
@@ -720,7 +1096,7 @@ window.TRPL_ORG = {
     disclaimerExtra: 'Federal income tax only. Assumes cash gifts to public charities and that your other deductions stay flat. The non-itemizer deduction does not apply to gifts to donor-advised funds.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { status: 'mfj', over65: 0, agi: 180000, rate: '0.24', giving: 12000, salt: 14000, mortgage: 9000, other: 0, years: 3 };
+      var s = GT.state('bunching', { status: 'mfj', over65: 0, agi: 180000, rate: '0.24', giving: 12000, salt: 14000, mortgage: 9000, other: 0, years: 3 });
       var out = h('div.section');
       var ctl = {
         status: GT.select({ options: GT.FILING, value: s.status, onChange: function (v) { s.status = v; calc(); } }),
@@ -733,6 +1109,7 @@ window.TRPL_ORG = {
         other: GT.moneyInput({ value: s.other, onChange: function (v) { s.other = v; calc(); } }),
         years: GT.radios({ options: [['2', 'Two years'], ['3', 'Three years']], value: '3', onChange: function (v) { s.years = +v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       GT.append(root, [
         h('div.grid', [
           GT.field('Filing status', ctl.status),
@@ -823,12 +1200,12 @@ window.TRPL_ORG = {
         ['community', 'Another community foundation'],
         ['other', 'Another sponsor']
       ];
-      var s = { sponsor: 'fidelity', amount: 1000, purpose: 'general', recurring: false };
+      var s = GT.state('daf', { sponsor: 'fidelity', amount: 1000, purpose: 'general', recurring: false, hItemize: 'no', hAsset: 'stock', hHorizon: 'multi' }); this.getState = function () { return s; };
       var steps = h('div.section'), rec = h('div.textout');
       var sp = GT.select({ options: SPONSORS.map(function (x) { return [x[0], x[1]]; }), value: s.sponsor, onChange: function (v) { s.sponsor = v; show(); } });
       var amt = GT.moneyInput({ value: s.amount, onChange: function (v) { s.amount = v; gen(); } });
-      var purpose = GT.radios({ options: [['general', 'Where needed most'], ['heritage', 'In honor / memory of someone'], ['program', 'A specific program']], value: 'general', onChange: function (v) { s.purpose = v; gen(); } });
-      var recurring = GT.checkbox('Make this a recurring grant (annual or monthly)', { onChange: function (v) { s.recurring = v; gen(); } });
+      var purpose = GT.radios({ options: [['general', 'Where needed most'], ['heritage', 'In honor / memory of someone'], ['program', 'A specific program']], value: s.purpose, onChange: function (v) { s.purpose = v; gen(); } });
+      var recurring = GT.checkbox('Make this a recurring grant (annual or monthly)', { value: s.recurring, onChange: function (v) { s.recurring = v; gen(); } });
       var honoree = GT.numberInput({ value: '', placeholder: 'Name of honoree or program' }); honoree.input.type = 'text'; honoree.input.addEventListener('input', gen);
 
       function show() {
@@ -851,10 +1228,10 @@ window.TRPL_ORG = {
 
       // DAF vs direct helper
       var helperOut = h('div.section');
-      var hs = { itemize: 'no', asset: 'stock', horizon: 'multi' };
-      var hi = GT.radios({ options: [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], value: 'no', onChange: function (v) { hs.itemize = v; helper(); } });
-      var ha = GT.radios({ options: [['cash', 'Cash'], ['stock', 'Appreciated stock'], ['ira', 'IRA (age 70½+)']], value: 'stock', onChange: function (v) { hs.asset = v; helper(); } });
-      var hh = GT.radios({ options: [['once', 'Give once, now'], ['multi', 'Give over several years']], value: 'multi', onChange: function (v) { hs.horizon = v; helper(); } });
+      var hs = { itemize: s.hItemize, asset: s.hAsset, horizon: s.hHorizon };
+      var hi = GT.radios({ options: [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], value: hs.itemize, onChange: function (v) { hs.itemize = s.hItemize = v; helper(); } });
+      var ha = GT.radios({ options: [['cash', 'Cash'], ['stock', 'Appreciated stock'], ['ira', 'IRA (age 70½+)']], value: hs.asset, onChange: function (v) { hs.asset = s.hAsset = v; helper(); } });
+      var hh = GT.radios({ options: [['once', 'Give once, now'], ['multi', 'Give over several years']], value: hs.horizon, onChange: function (v) { hs.horizon = s.hHorizon = v; helper(); } });
       function helper() {
         GT.clear(helperOut);
         var msg, tone = 'info';
@@ -878,7 +1255,7 @@ window.TRPL_ORG = {
           h('div.grid', [GT.field('Do you itemize?', hi), GT.field('What would you give?', ha), GT.field('Timing', hh)]),
           helperOut
         ]),
-        GT.callout('info', '<p><b>Two more DAF ideas.</b> Name the Library as a <b>successor beneficiary</b> of your fund so your giving continues. And if you keep a DAF at a community foundation such as the North Dakota Community Foundation, ask about recurring grants — set once, delivered every year.</p>'),
+        GT.callout('info', '<p><b>Two more DAF ideas.</b> Name the Library as a <b>successor beneficiary</b> of your fund so your giving continues. ' + (o.communityFoundation ? 'And if you keep a DAF at a community foundation such as the ' + o.communityFoundation + ', ask about recurring grants — set once, delivered every year.' : '') + '</p>'),
         GT.advisorQuestions([
           'Should I fund my DAF with appreciated securities rather than cash?',
           'How much should I contribute this year to make itemizing worthwhile?',
@@ -888,6 +1265,64 @@ window.TRPL_ORG = {
         GT.contactLine()
       ]);
       show(); gen(); helper();
+    }
+  });
+})(window.TRPLGivingTools);
+
+/* @tool Year-End Giving Deadlines
+ * Tells a donor, for the gift type they choose, when to start so the gift
+ * counts in the current tax year — and what "counts" means for each type. */
+(function (GT) {
+  var h = GT.h, T = GT.T, ORG = GT.ORG;
+
+  var TYPES = {
+    online: { label: 'Credit card or online gift', lead: 0, rule: 'A credit-card gift counts on the date the charge is made — even if you pay the card bill next year. Online gifts made before midnight on December 31 (your local time) count for this year.', steps: ['Give online any time through December 31.', 'Save the emailed receipt; the Library’s year-end summary follows in January.'] },
+    check: { label: 'Check by mail', lead: 3, rule: 'A mailed check counts on the postmark date (the “mailbox rule”), as long as the check clears in the ordinary course. Hand-delivered checks count when delivered.', steps: ['Mail by December 31 with a clear postmark; consider sending it certified late in the month.', 'Write the purpose (e.g., “endowment”) in the memo line.', 'Keep a copy of the check and the postmark receipt.'] },
+    stock: { label: 'Stock or mutual fund shares', lead: 14, rule: 'A gift of securities counts on the date the shares arrive in the Library’s brokerage account — not the date you ask for the transfer. Mutual fund transfers can take two to four weeks.', steps: ['Send your broker the transfer instructions at least two weeks before year-end (three to four for mutual funds).', 'Email the Library so it can watch for the shares and value them on arrival.', 'Your deduction is the average of the high and low price on the day the shares arrive.'] },
+    qcd: { label: 'IRA qualified charitable distribution', lead: 21, rule: 'A QCD counts when the funds leave your IRA and reach the charity. If your custodian issues you a checkbook for the IRA, the check must clear by December 31 — so mail those by mid-December.', steps: ['Request the distribution from your custodian by early December; many have year-end cutoffs.', 'Ask that the check be payable to the Library and sent directly, or to you for forwarding.', 'Tell the Library it is coming — custodian checks often arrive with no donor name.'] },
+    daf: { label: 'Donor-advised fund grant', lead: 0, rule: 'Your deduction happened when you funded the DAF, so a grant recommendation has no tax deadline for you. Sponsors do have year-end cutoffs for processing, and the Library appreciates receiving grants before year-end for budgeting.', steps: ['Recommend the grant by your sponsor’s published cutoff (often mid-December).', 'Contributions *to* your DAF follow the rules for the asset you contribute (cash, check, or stock above).'] },
+    dafFund: { label: 'Contribution to your donor-advised fund', lead: 10, rule: 'Contributions to a DAF are deductible when the sponsor receives them. Cash and wire gifts are quick; securities and complex assets need lead time, and most sponsors publish December cutoffs for each asset type.', steps: ['Check your sponsor’s year-end deadline calendar.', 'Initiate securities transfers at least two weeks early.'] },
+    wire: { label: 'Wire or ACH transfer', lead: 3, rule: 'A wire counts when received by the Library’s bank. Domestic wires usually settle the same business day; ACH can take two to three business days.', steps: ['Request the Library’s wire instructions from ' + ORG().contactEmail + '.', 'Send by December 29 to allow for bank processing.'] },
+    property: { label: 'Real estate, business interests, or other property', lead: 60, rule: 'Property gifts count when title transfers. They require a qualified appraisal (for deductions over $5,000), the Library’s acceptance review, and often environmental or title work.', steps: ['Start the conversation with the Library at least two months before year-end.', 'Line up a qualified appraiser; the appraisal can be dated no earlier than 60 days before the gift.', 'Expect to file Form 8283 Section B with the appraiser’s and the Library’s signatures.'] },
+    endowment: { label: 'Endowment gift for the North Dakota tax credit', lead: 14, rule: 'The gift must be completed in the tax year you claim the credit, by the rules above for whatever asset you give, and the Library must issue its qualification letter for your Schedule ND-1QEC.', steps: ['Designate the gift for the endowment when you give.', 'Request the qualification letter from the Library.', 'If giving stock or by QCD, follow those lead times.'] }
+  };
+
+  GT.register('deadlines', {
+    title: 'When to give so it counts this year',
+    intro: 'Year-end gifts count only if they are complete in time — and “complete” means something different for a check, a stock transfer, and an IRA distribution. Pick your gift type to see the rule and a start-by date.',
+    disclaimerExtra: 'Lead times are practical estimates; custodians, brokers, and fund sponsors set their own cutoffs, which are usually published in early December.',
+    render: function (root) {
+      var o = ORG(), t = T();
+      var s = GT.state('deadlines', { type: 'stock' }); this.getState = function () { return s; };
+      var out = h('div.section');
+      var ctl = { type: GT.radios({ stacked: true, options: Object.keys(TYPES).filter(function (k) { return k !== 'endowment' || (o.features && o.features.ndCredit); }).map(function (k) { return [k, TYPES[k].label]; }), value: s.type, onChange: function (v) { s.type = v; calc(); } }) };
+      GT.applyState(ctl, s);
+      GT.append(root, [GT.field('What are you giving?', ctl.type), out]);
+      function fmt(d) { return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
+      function calc() {
+        GT.clear(out);
+        var ty = TYPES[s.type], now = new Date(), year = now.getFullYear();
+        var yearEnd = new Date(year, 11, 31), startBy = new Date(yearEnd); startBy.setDate(startBy.getDate() - ty.lead);
+        // Dec 31 falls on a weekend some years: brokers and banks are closed
+        var dow = yearEnd.getDay(), lastBiz = new Date(yearEnd); if (dow === 6) lastBiz.setDate(30); if (dow === 0) lastBiz.setDate(29);
+        var daysLeft = Math.ceil((startBy - now) / 864e5);
+        var late = daysLeft < 0, tight = daysLeft >= 0 && daysLeft <= 7;
+        GT.append(out, [
+          h('div.stats', [
+            GT.stat('Start by', ty.lead ? fmt(startBy) : 'December 31', ty.lead ? 'About ' + ty.lead + ' days before year-end.' : 'No lead time needed.', late ? 'highlight' : 'good'),
+            GT.stat('Last business day of ' + year, fmt(lastBiz), 'Banks and brokers are closed on weekends and January 1.', 'muted'),
+            GT.stat(late ? 'Days past the start-by date' : 'Days until the start-by date', String(Math.abs(daysLeft)), late ? 'It may still be possible — call your custodian or broker today and tell the Library.' : tight ? 'Act this week.' : 'Comfortable, if you start on time.', late ? 'highlight' : tight ? 'highlight' : 'muted')
+          ]),
+          GT.callout('info', '<p><b>When it counts:</b> ' + ty.rule + '</p>'),
+          GT.section('What to do', h('ol.steps', ty.steps.map(function (x) { return GT.li(x.replace(/\*([^*]+)\*/g, '<i>$1</i>')); }))),
+          late ? GT.callout('warn', 'If the gift cannot be completed by December 31, it will count for <b>' + (year + 1) + '</b> — still a wonderful gift, just a different tax year. A credit-card gift or DAF grant can be made instantly if timing matters.') : null,
+          s.type === 'stock' ? GT.callout('good', 'Tip: most brokers process electronic (DTC) transfers of listed stocks in one to three business days when the instructions are complete. The two-week cushion is for mutual funds, paper certificates, and the December rush.') : null,
+          h('div.actions', [GT.linkBtn('Give now', o.urls.donate, 'primary'), s.type === 'stock' ? GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary') : null, s.type === 'qcd' ? GT.linkBtn('IRA giving calculator', GT.toolUrl('qcd'), 'secondary') : null, s.type === 'endowment' ? GT.linkBtn('ND tax credit calculator', GT.toolUrl('ndcredit'), 'secondary') : null, GT.linkBtn('Email the giving team', 'mailto:' + o.contactEmail, 'secondary')]),
+          GT.advisorQuestions(['Which tax year do I want this gift to fall in, given my income this year and next?', 'Does my custodian, broker, or fund sponsor have a published year-end cutoff for this kind of transfer?', 'Should part of this gift wait until January to bunch with next year’s giving?']),
+          GT.contactLine()
+        ]);
+      }
+      calc();
     }
   });
 })(window.TRPLGivingTools);
@@ -905,7 +1340,7 @@ window.TRPL_ORG = {
     disclaimerExtra: 'A simplified estimate. It ignores lifetime taxable gifts beyond the amount you enter, generation-skipping tax, state tax rates and brackets, and valuation discounts. Your estate attorney can model this precisely.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { married: 'yes', gross: 8000000, debts: 250000, toSpouse: 0, charity: 500000, gifts: 0, dsue: 0, state: 'ND' };
+      var s = GT.state('estate', { married: 'yes', gross: 8000000, debts: 250000, toSpouse: 0, charity: 500000, gifts: 0, dsue: 0, state: 'ND' });
       var out = h('div.section');
       var ctl = {
         married: GT.radios({ options: [['yes', 'Married'], ['no', 'Single / widowed']], value: 'yes', onChange: function (v) { s.married = v; toggle(); calc(); } }),
@@ -917,6 +1352,7 @@ window.TRPL_ORG = {
         dsue: GT.moneyInput({ value: s.dsue, onChange: function (v) { s.dsue = v; calc(); } }),
         state: GT.select({ options: STATES.map(function (x) { return [x, x]; }), value: 'ND', onChange: function (v) { s.state = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       var spouseField = GT.field('Amount passing to your spouse', ctl.toSpouse, 'Gifts to a U.S.-citizen spouse are fully deductible (the “marital deduction”).');
       var dsueField = GT.field('Unused exemption from a deceased spouse (“portability”)', ctl.dsue, 'If your spouse died and the estate elected portability, their unused exemption adds to yours.');
       function toggle() { spouseField.style.display = s.married === 'yes' ? '' : 'none'; }
@@ -980,6 +1416,7 @@ window.TRPL_ORG = {
   var h = GT.h, ORG = GT.ORG;
 
   GT.register('intent', {
+    share: false,
     title: 'Tell us about your legacy gift',
     intro: 'Have you included the Library in your will, trust, or as a beneficiary of an account? Letting us know lets us thank you, make sure we understand your wishes, and welcome you to the Heritage Society. Any details you share stay confidential and are never binding.',
     disclaimerExtra: 'Sharing your intentions does not create a legal obligation and can be revised at any time.',
@@ -989,7 +1426,8 @@ window.TRPL_ORG = {
       if (url && opts.embedForm !== 'false') {
         GT.append(root, [
           h('iframe', { src: url, title: 'Legacy gift intention form', style: { width: '100%', minHeight: (opts.formHeight || 900) + 'px', border: 0, borderRadius: '10px', background: '#fff' }, loading: 'lazy' }),
-          h('p.help', { html: 'Prefer email? Write to <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a>.' })
+          h('p.help', { html: 'Prefer email? Write to <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a>.' }),
+          GT.intentStatementSection()
         ]);
         return;
       }
@@ -1013,6 +1451,7 @@ window.TRPL_ORG = {
         GT.field('Notes (optional)', { el: share, input: share }),
         h('div.actions', [send, GT.copyButton(body, 'Copy message instead')]),
         GT.callout('info', 'This opens a message in your own email program addressed to <b>' + o.contactEmail + '</b>. Nothing is sent until you press send.'),
+        GT.intentStatementSection(function () { return { will: 'a gift in my/our will or trust', beneficiary: 'a beneficiary designation', other: 'a planned gift', considering: 'a planned gift under consideration' }[s.type]; }, function () { return share.value; }),
         GT.contactLine()
       ]);
     }
@@ -1033,7 +1472,7 @@ window.TRPL_ORG = {
     disclaimerExtra: 'Illustrations only. Actual deductions are calculated with IRS actuarial tables (Table 2010CM) and the §7520 rate for the month of the gift; the simplified life-expectancy math here can differ by several percentage points. Charitable gift annuities are regulated by state insurance departments and are issued only by charities licensed to do so.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { kind: 'cga', age: 75, gift: 100000, r7520: t.sec7520.rate, payout: 0.05, termType: 'life', years: 20, rate: '0.24', asset: 'cash', basis: 40000 };
+      var s = GT.state('lifeincome', { kind: 'cga', age: 75, gift: 100000, r7520: t.sec7520.rate, payout: 0.05, termType: 'life', years: 20, rate: '0.24', asset: 'cash', basis: 40000 });
       var out = h('div.section');
       var ctl = {
         kind: GT.radios({ stacked: true, options: [
@@ -1050,6 +1489,7 @@ window.TRPL_ORG = {
         asset: GT.radios({ options: [['cash', 'Cash'], ['stock', 'Appreciated stock']], value: 'cash', onChange: function (v) { s.asset = v; toggle(); calc(); } }),
         basis: GT.moneyInput({ value: s.basis, onChange: function (v) { s.basis = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       var payoutField = GT.field('Annual payout rate', ctl.payout, 'Trusts must pay at least 5% and no more than 50% per year. Lower payout rates leave more for the Library and a larger deduction.');
       var termField = GT.field('Payment period', ctl.termType);
       var yearsField = GT.field('Number of years', ctl.years, 'Term trusts can run up to 20 years.');
@@ -1176,7 +1616,7 @@ window.TRPL_ORG = {
           document.head.appendChild(sc);
         }
       }
-      var s = { gift: 250, ratio: '1', cap: 0, monthly: false };
+      var s = GT.state('matching', { gift: 250, ratio: '1', cap: 0, monthly: false });
       var out = h('div.section');
       var ctl = {
         gift: GT.moneyInput({ value: s.gift, onChange: function (v) { s.gift = v; calc(); } }),
@@ -1184,6 +1624,7 @@ window.TRPL_ORG = {
         cap: GT.moneyInput({ value: '', placeholder: 'Optional', onChange: function (v) { s.cap = v; calc(); } }),
         monthly: GT.checkbox('This is a monthly gift — show the annual total', { onChange: function (v) { s.monthly = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       ctl.cap.input.value = '';
       GT.append(root, [
         h('div.grid', [
@@ -1235,10 +1676,10 @@ window.TRPL_ORG = {
     disclaimerExtra: 'Monthly gifts are charged to your card or bank account on the same day each month and can be changed or cancelled at any time. Cash gifts to the Library qualify for the ' + money(T().charitable.nonItemizer.single) + ' / ' + money(T().charitable.nonItemizer.mfj) + ' non-itemizer deduction in ' + T().taxYear + '.',
     render: function (root) {
       var o = ORG(), t = T();
-      var s = { amt: 25 };
+      var s = GT.state('monthly', { amt: 25 }); this.getState = function () { return s; };
       var out = h('div.section');
       var presets = [10, 25, 50, 100, 250];
-      var slider = h('input.range', { type: 'range', min: 5, max: 500, step: 5, value: s.amt, 'aria-label': 'Monthly gift amount' });
+      var slider = h('input.range', { type: 'range', min: 5, max: 500, step: 5, value: GT.clamp(s.amt, 5, 500), 'aria-label': 'Monthly gift amount' });
       var custom = GT.moneyInput({ value: s.amt, onChange: function (v) { s.amt = Math.max(1, v); slider.value = GT.clamp(s.amt, 5, 500); calc(); } });
       slider.addEventListener('input', function () { s.amt = +slider.value; custom.set(s.amt); calc(); });
       var chips = h('div.radios', presets.map(function (p) { return GT.button(money(p) + '/mo', function () { s.amt = p; slider.value = p; custom.set(p); calc(); }, 'secondary'); }));
@@ -1298,7 +1739,7 @@ window.TRPL_ORG = {
       ['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']] },
     { key: 'match', q: 'Does your employer match charitable gifts?', help: 'Many companies match employee gifts 1:1 or better. Retirees are sometimes eligible too.', type: 'radio', options: [
       ['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']] }
-  ];
+  ].filter(function (st) { return st.key !== 'nd' || (window.TRPL_ORG.features && window.TRPL_ORG.features.ndCredit); });
 
   function recommend(a) {
     var o = ORG(), t = T(), u = o.urls, tools = u.tools;
@@ -1390,7 +1831,7 @@ window.TRPL_ORG = {
       qs.push('What appraisal and paperwork does the IRS require for a gift of property, and what is the deduction based on?');
     }
 
-    if ((a.nd === 'yes' || a.nd === 'unsure') && (big || a.size === 'm' || a.goal === 'income')) {
+    if (o.features && o.features.ndCredit && (a.nd === 'yes' || a.nd === 'unsure') && (big || a.size === 'm' || a.goal === 'income')) {
       var nd = t.ndCredit;
       recs.push({ score: a.nd === 'yes' ? 88 : 58, title: 'Claim North Dakota’s 40% charitable giving tax credit', tag: a.nd === 'yes' ? 'Strong fit' : 'If you pay ND tax',
         why: 'Gifts of ' + money(nd.minGift) + ' or more to the Library’s endowment — and planned gifts like gift annuities or remainder trusts — earn a North Dakota income tax credit of ' + pctFmt(nd.rate) + ' of the gift, up to ' + money(nd.maxIndividual) + ' per person or ' + money(nd.maxJoint) + ' for couples filing jointly, with a three-year carryforward. Combined with federal benefits, a large gift can cost less than half its face value.',
@@ -1419,10 +1860,10 @@ window.TRPL_ORG = {
 
   GT.register('navigator', {
     title: 'Find the right way to give',
-    intro: 'Answer seven quick questions and we’ll point you to the giving options that fit your situation — plus the questions worth asking your advisor.',
+    intro: 'Answer a few quick questions and we’ll point you to the giving options that fit your situation — plus the questions worth asking your advisor.',
     disclaimerExtra: 'The Navigator suggests options to explore; it does not recommend a specific transaction.',
     render: function (root) {
-      var a = { goal: null, assets: [], age: null, itemize: null, size: null, nd: null, match: null }, step = 0;
+      var a = GT.state('navigator', { goal: '', assets: [], age: '', itemize: '', size: '', nd: '', match: '', done: false }), step = 0; this.getState = function () { return a; };
       var view = h('div.section'), first = true; root.appendChild(view);
 
       function progress() { return h('div.progress', STEPS.map(function (_, i) { return h('span' + (i <= step ? '.on' : '')); })); }
@@ -1442,7 +1883,7 @@ window.TRPL_ORG = {
         var s = STEPS[step];
         if (s.type === 'radio' && !a[s.key]) return;
         if (s.type === 'checks' && !a.assets.length) { a.assets = ['cash']; }
-        if (step < STEPS.length - 1) { step++; renderStep(); } else renderResults();
+        if (step < STEPS.length - 1) { step++; renderStep(); } else { a.done = true; renderResults(); }
       }
       function renderResults() {
         GT.clear(view);
@@ -1459,11 +1900,11 @@ window.TRPL_ORG = {
           }),
           GT.advisorQuestions(r.qs),
           GT.contactLine(),
-          h('div.actions', [GT.button('Start over', function () { a = { goal: null, assets: [], age: null, itemize: null, size: null, nd: null, match: null }; step = 0; renderStep(); }, 'secondary')])
+          h('div.actions', [GT.button('Start over', function () { Object.assign(a, { goal: '', assets: [], age: '', itemize: '', size: '', nd: '', match: '', done: false }); step = 0; renderStep(); }, 'secondary')])
         ]);
         view.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
-      renderStep();
+      if (a.done && a.goal) renderResults(); else renderStep();
     }
   });
 })(window.TRPLGivingTools);
@@ -1488,7 +1929,7 @@ window.TRPL_ORG = {
     disclaimerExtra: 'The credit is nonrefundable: it offsets North Dakota income tax you would otherwise owe, with unused amounts carried forward up to three years. It generally requires North Dakota tax liability; nonresidents with North Dakota-source income should ask their preparer how credits apply to them. Federal figures assume the IRS rule that reduces a charitable deduction by state credits received (Treas. Reg. § 1.170A-1(h)(3)).',
     render: function (root) {
       var t = T(), o = ORG(), c = t.ndCredit;
-      var s = { who: 'individual', kind: 'endowment', status: 'mfj', gift: 25000, deduction: 40000, ndIncome: 150000, rate: '0.24', itemize: 'no', saltRoom: false };
+      var s = GT.state('ndcredit', { who: 'individual', kind: 'endowment', status: 'mfj', gift: 25000, deduction: 40000, ndIncome: 150000, rate: '0.24', itemize: 'no', saltRoom: false });
       var out = h('div.section');
       var ctl = {
         who: GT.radios({ options: [['individual', 'An individual or couple'], ['business', 'A business, trust, or estate']], value: 'individual', onChange: function (v) { s.who = v; toggle(); calc(); } }),
@@ -1503,6 +1944,7 @@ window.TRPL_ORG = {
         itemize: GT.radios({ options: [['no', 'No'], ['yes', 'Yes'], ['unsure', 'Not sure']], value: 'no', onChange: function (v) { s.itemize = v; calc(); } }),
         saltRoom: GT.checkbox('I itemize and my state and local taxes are <b>below</b> the federal SALT cap (' + money(t.salt.cap.mfj) + ')', { onChange: function (v) { s.saltRoom = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       var statusField = GT.field('Filing status', ctl.status);
       var giftField = GT.field('Gift to the endowment', ctl.gift, 'Individuals must give at least ' + money(c.minGift) + ' in a year (one gift or several) to qualify. A gift of ' + money(c.maxIndividual / c.rate) + ' earns the full ' + money(c.maxIndividual) + ' credit for one person; ' + money(c.maxJoint / c.rate) + ' earns ' + money(c.maxJoint) + ' for a couple filing jointly.');
       var dedField = GT.field('Federal charitable deduction for the planned gift', ctl.deduction, 'The credit is 40% of the <i>deductible portion</i> of a planned gift — the present value of what the Library will eventually receive — not the whole amount you transfer. The <a href="' + GT.toolUrl('lifeincome') + '" target="_blank" rel="noopener">life-income illustrator</a> estimates it.');
@@ -1573,16 +2015,17 @@ window.TRPL_ORG = {
           lost > 0 ? GT.callout('warn', '<p>About <b>' + money(lost) + '</b> of the credit would expire unused after the three carryforward years at this level of North Dakota income. Splitting the gift across two tax years, or giving as a couple filing jointly, can capture more of it.</p>') : null,
           !biz && ndLiab === 0 ? GT.callout('warn', '<p><b>This credit only helps if you owe North Dakota income tax.</b> At the income entered, North Dakota tax is zero — the credit would have no value. If you live elsewhere, your own state may have similar incentives; the federal benefits of endowment and planned gifts still apply.</p>') : null,
           kind === 'endowment' && !tooSmall && credit < cap && !biz ? GT.callout('info', 'A gift of <b>' + money(cap / c.rate) + '</b> would earn the full ' + money(cap) + ' credit' + (s.status !== 'mfj' ? '; couples filing jointly can claim up to ' + money(c.maxJoint) + ' on ' + money(c.maxJoint / c.rate) : '') + '.') : null,
-          GT.callout('good', '<p><b>Stack the benefits.</b> Give appreciated stock to the endowment and you avoid capital gains tax, may deduct it federally (net of the credit), and claim the 40% state credit. Or, if you are 70½ or older, a qualified charitable distribution from an IRA to the endowment keeps the amount out of your income entirely <i>and</i> earns the credit — ask your preparer to confirm both apply together.</p>'),
+          GT.callout('good', '<p><b>Stack the benefits.</b> Give appreciated stock to the endowment and you avoid capital gains tax, may deduct it federally (net of the credit), and claim the 40% state credit. A qualified charitable distribution from an IRA (age 70½+) can also fund the endowment and earn the credit; it stays out of your <i>federal</i> income.</p><p><b>No double-dip on the state return:</b> North Dakota adds the federally deducted portion of the gift — or the IRA amount excluded federally — back to state taxable income (Form ND-1, line 2). At North Dakota’s 1.95–2.5% rates that costs a few hundred dollars at most against a credit worth thousands.</p>'),
           o.ndEndowment.confirmed && o.ndEndowment.fundName
             ? GT.callout('info', '<p>Gifts designated to the <b>' + o.ndEndowment.fundName + '</b> qualify. Please note “endowment” on your gift so it is recorded correctly, and keep the Library’s acknowledgment for your ' + (kind === 'endowment' ? c.formEndowment : c.formPlanned) + '.</p>')
             : GT.callout('warn', '<p><b>Before you count on the credit:</b> it applies only to gifts directed to a qualified endowment fund — a permanent, irrevocable fund that spends only its earnings. Please email <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a> and we will confirm how to designate your gift to the Library’s endowment so it qualifies.</p>'),
           GT.section('How to claim it', h('ol.steps', [
-            GT.li('Make your gift to the ' + o.name + ' and designate it for the <b>endowment</b>' + (kind === 'planned' ? ', or complete the planned gift with your advisor' : '') + '. Keep the acknowledgment letter.'),
+            GT.li('Make your gift to the ' + o.name + ' and designate it for the <b>endowment</b>' + (kind === 'planned' ? ', or complete the planned gift with your advisor' : '') + '. Ask us for the <b>qualification letter</b> — the schedule requires a statement from the nonprofit that it and the fund meet N.D.C.C. § 57-38-01.21 — and keep it with your acknowledgment.'),
             GT.li('File <b>' + (kind === 'endowment' ? c.formEndowment : c.formPlanned) + '</b> with your North Dakota return' + (biz ? ' (Schedule QEC for entities)' : '') + '. The statute is ' + c.statute + '.'),
             GT.li('If the credit exceeds your North Dakota tax, carry the balance forward — up to ' + c.carryforwardYears + ' more years.'),
             GT.li('On your federal return, reduce the charitable deduction by the credit (your preparer will know the rule) — or use the SALT safe harbor if you have room under the cap.')
           ])),
+          (!biz && kind === 'endowment' && !tooSmall) ? worksheet(credit, base, cap, ndLiab) : null,
           h('div.actions', [GT.linkBtn('Give to the endowment', o.ndEndowment.giveUrl || o.urls.donate, 'primary'), GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary'), GT.linkBtn('ND Tax Commissioner: endowment credit', 'https://www.tax.nd.gov/income-tax-incentives/endowment-fund-contribution-tax-credit', 'secondary')]),
           GT.advisorQuestions([
             'Does my gift qualify — is the fund a “qualified endowment” under N.D.C.C. § 57-38-01.21, and have I met the ' + money(c.minGift) + ' minimum this year?',
@@ -1594,6 +2037,60 @@ window.TRPL_ORG = {
           ]),
           GT.contactLine()
         ]);
+      }
+      /* ---- Pre-filled Schedule ND-1QEC worksheet (client-side, nothing uploaded) ---- */
+      var ws = { name: '', carry: 0 };
+      var wsName = GT.numberInput({ value: '', placeholder: 'As shown on your return (optional)' }); wsName.input.type = 'text'; wsName.input.autocomplete = 'name'; wsName.input.addEventListener('input', function () { ws.name = wsName.input.value; });
+      var wsCarry = GT.moneyInput({ value: 0, onChange: function (v) { ws.carry = v; } });
+      var wsStatus = h('p.help');
+      function worksheet(credit, base, cap, ndLiab) {
+        var f = t.ndForms.qec;
+        var btn = GT.button('Download pre-filled ' + f.title + ' (' + f.formYear + ')', function () { fillQEC(credit, base, cap, ndLiab, btn); }, 'primary');
+        return GT.section('Draft your ' + f.title, [
+          h('p.help', { html: 'We can pre-fill the state’s own fillable ' + f.title + ' with the numbers above so you or your preparer can finish it. The PDF is built in your browser — nothing you type is sent anywhere. Lines 10–16 (the North Dakota add-back) depend on your federal Schedule A, so those are left for your preparer.' }),
+          h('div.grid', [GT.field('Your name', wsName), GT.field('Unused credit carried over from earlier years', wsCarry, 'From line 9 of last year’s schedule, if any.')]),
+          h('div.actions', [btn, GT.linkBtn('Blank form at tax.nd.gov', f.source, 'secondary')]),
+          wsStatus
+        ]);
+      }
+      function loadPdfLib() {
+        return new Promise(function (res, rej) {
+          if (window.PDFLib) return res(window.PDFLib);
+          var sc = document.createElement('script'); sc.src = GT.base + 'vendor/pdf-lib.min.js'; sc.async = true;
+          sc.onload = function () { res(window.PDFLib); }; sc.onerror = function () { rej(new Error('pdf-lib failed to load')); };
+          document.head.appendChild(sc);
+        });
+      }
+      function money0(n) { return Math.round(n).toLocaleString('en-US'); }
+      function fillQEC(credit, base, cap, ndLiab, btn) {
+        var f = t.ndForms.qec, F = f.fields;
+        btn.disabled = true; wsStatus.textContent = 'Preparing your worksheet…';
+        var eligible = Math.min(base, t.ndCredit.eligibleContributionCap[s.status]);
+        var l5 = eligible * t.ndCredit.rate, l6 = ws.carry, l7 = l5 + l6, l8 = Math.min(l7, ndLiab), l9 = l7 - l8;
+        Promise.all([loadPdfLib(), fetch(GT.base + f.file).then(function (r) { if (!r.ok) throw new Error('form not found'); return r.arrayBuffer(); })])
+          .then(function (rs) {
+            var PDFLib = rs[0];
+            return PDFLib.PDFDocument.load(rs[1]).then(function (doc) {
+              var form = doc.getForm();
+              function set(k, v, size) { try { var fld = form.getTextField(F[k]); fld.setText(String(v)); if (size) fld.setFontSize(size); } catch (e) { /* field missing on this form year */ } }
+              set('name', ws.name); set('fundName', (o.ndEndowment.fundName || o.name + ' Endowment Fund'), 7); set('fundAddress', o.address, 7); set('amount', money0(base));
+              set('l2', money0(base)); set('l3', money0(t.ndCredit.eligibleContributionCap[s.status])); set('l4', money0(eligible)); set('l5', money0(l5));
+              set('l6', money0(l6)); set('l7', money0(l7)); set('l8', money0(l8)); set('l9', money0(l9));
+              var page = doc.getPages()[0], font = null;
+              return doc.embedFont(PDFLib.StandardFonts.HelveticaBold).then(function (fnt) {
+                page.drawText(GT.pdfSafe('DRAFT WORKSHEET — prepared with the Library’s giving tools on ' + new Date().toLocaleDateString('en-US') + '. Estimates only; review with your tax preparer before filing.'), { x: 36, y: page.getHeight() - 24, size: 8, font: fnt, color: PDFLib.rgb(0.82, 0.46, 0.34) });
+                return doc.save();
+              });
+            });
+          })
+          .then(function (bytes) {
+            var blob = new Blob([bytes], { type: 'application/pdf' }), url = URL.createObjectURL(blob);
+            var a = h('a', { href: url, download: 'Schedule-ND-1QEC-' + f.formYear + '-draft.pdf' }); document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+            wsStatus.innerHTML = 'Downloaded. Line 8 uses your <b>estimated</b> North Dakota tax (' + money(ndLiab) + '); your preparer will replace it with the actual figure and complete lines 10–16. Also attach the Library’s qualification letter.';
+          })
+          .catch(function (e) { wsStatus.textContent = 'Sorry — the worksheet could not be prepared (' + e.message + '). Use the blank form link instead.'; })
+          .then(function () { btn.disabled = false; });
       }
       toggle(); calc();
     }
@@ -1612,7 +2109,7 @@ window.TRPL_ORG = {
     disclaimerExtra: 'RMD estimates use the IRS Uniform Lifetime Table and your age this year; your custodian’s figure governs. QCDs must go directly from the custodian to the charity and cannot fund a donor-advised fund.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { age: 73, status: 'mfj', rate: '0.22', balance: 500000, gift: 10000, itemize: 'no', agi: 120000 };
+      var s = GT.state('qcd', { age: 73, status: 'mfj', rate: '0.22', balance: 500000, gift: 10000, itemize: 'no', agi: 120000 });
       var out = h('div.section');
       var ctl = {
         age: GT.numberInput({ min: 18, max: 110, value: s.age, onChange: function (v) { s.age = v; calc(); } }),
@@ -1623,6 +2120,7 @@ window.TRPL_ORG = {
         itemize: GT.radios({ options: [['no', 'No'], ['yes', 'Yes'], ['unsure', 'Not sure']], value: s.itemize, onChange: function (v) { s.itemize = v; calc(); } }),
         agi: GT.moneyInput({ value: s.agi, onChange: function (v) { s.agi = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       GT.append(root, [
         h('div.grid', [
           GT.field('Your age this year', ctl.age, 'QCDs begin at 70½. Required minimum distributions begin at ' + t.qcd.rmdAge + ' (' + t.qcd.rmdAgeBornAfter1959 + ' if you were born in 1960 or later).'),
@@ -1686,6 +2184,7 @@ window.TRPL_ORG = {
             GT.li('Keep the Library’s acknowledgment letter for your tax records. Your custodian will report the distribution on Form 1099-R; you or your preparer mark it as a QCD on your return.')
           ])),
           h('div.actions', [GT.linkBtn('IRA giving instructions', o.urls.ira, 'primary'), GT.linkBtn('Email the giving team', 'mailto:' + o.contactEmail, 'secondary')]),
+          letterSection(capped),
           GT.advisorQuestions([
             'How much of my ' + t.taxYear + ' RMD should I direct to charity as a QCD?',
             'Would lowering my AGI with a QCD reduce my Medicare IRMAA surcharge or the taxable share of my Social Security?',
@@ -1694,6 +2193,35 @@ window.TRPL_ORG = {
             'Is my state’s treatment of QCDs the same as the federal treatment?'
           ]),
           GT.contactLine()
+        ]);
+      }
+      /* ---- QCD request letter to the custodian ---- */
+      var L = { donor: '', address: '', custodian: '', account: '' };
+      function txt(ph, ac) { var i = GT.numberInput({ value: '', placeholder: ph }); i.input.type = 'text'; if (ac) i.input.autocomplete = ac; return i; }
+      var lDonor = txt('Your full name', 'name'), lAddr = txt('Street, city, state, ZIP', 'street-address'), lCust = txt('e.g. Fidelity, Schwab, Vanguard, Edward Jones'), lAcct = txt('Last four digits are enough');
+      var lStatus = h('p.help');
+      function letterText(amount) {
+        var d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        return [d, '', (lCust.input.value || '[IRA custodian]') + '\nAttn: Retirement Distributions', '', 'Re: Qualified charitable distribution from IRA ending in ' + (lAcct.input.value || '[account]'),
+          '', 'To whom it may concern:', '',
+          'Please make a qualified charitable distribution under Internal Revenue Code § 408(d)(8) from my IRA in the amount of ' + money(amount) + ', payable to:', '',
+          o.name + '\nTax ID (EIN) ' + o.ein + '\n' + o.address, '',
+          'Please send the check directly to the address above (or to me, made payable to the ' + o.name + ', for forwarding). Do not withhold federal or state income tax from this distribution. Please include my name on the check or in the accompanying correspondence so the Library can identify the gift, and confirm the date the distribution is made so it can be applied to the ' + t.taxYear + ' tax year.', '',
+          'Thank you.', '', '', (lDonor.input.value || '[Your name]') + '\n' + (lAddr.input.value || '[Your address]')].join('\n');
+      }
+      function letterSection(amount) {
+        var btn = GT.button('Download letter (PDF)', function () {
+          btn.disabled = true; lStatus.textContent = 'Preparing…';
+          GT.makePDF({ title: 'Qualified charitable distribution request', subtitle: 'Letter to IRA custodian', blocks: GT.letterBlocks(letterText(amount)).concat([{ gap: 10 }, { sig: ['Signature', 'Date'] }]), disclaimer: false })
+            .then(function (b) { GT.downloadBytes(b, 'qcd-request-letter.pdf'); lStatus.textContent = 'Downloaded. Many custodians also have their own QCD form — this letter works alongside it.'; })
+            .catch(function (e) { lStatus.textContent = 'Could not build the PDF (' + e.message + '); use Copy text instead.'; })
+            .then(function () { btn.disabled = false; });
+        }, 'primary');
+        return GT.section('Letter to your IRA custodian', [
+          h('p.help', 'Fill in the blanks and download a ready-to-sign request for a ' + money(amount) + ' QCD payable to the Library. Nothing you type leaves your browser.'),
+          h('div.grid', [GT.field('Your name', lDonor), GT.field('Your mailing address', lAddr), GT.field('IRA custodian', lCust), GT.field('Account number', lAcct)]),
+          h('div.actions', [btn, GT.copyButton(function () { return letterText(amount); }, 'Copy letter text')]),
+          lStatus
         ]);
       }
       calc();
@@ -1713,7 +2241,7 @@ window.TRPL_ORG = {
     disclaimerExtra: 'Assumes publicly traded securities held more than one year and given to a public charity. Deductions for appreciated property are limited to 30% of adjusted gross income per year, with a five-year carryover. Mutual-fund cost basis and wash-sale rules can complicate the picture — ask your advisor.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { fmv: 25000, basis: 8000, held: 'long', status: 'mfj', rate: '0.24', cg: '0.15', niit: false, state: 0, itemize: 'yes', agi: 200000 };
+      var s = GT.state('stock', { fmv: 25000, basis: 8000, held: 'long', status: 'mfj', rate: '0.24', cg: '0.15', niit: false, state: 0, itemize: 'yes', agi: 200000 });
       var out = h('div.section');
       var ctl = {
         fmv: GT.moneyInput({ value: s.fmv, onChange: function (v) { s.fmv = v; calc(); } }),
@@ -1727,6 +2255,7 @@ window.TRPL_ORG = {
         itemize: GT.radios({ options: [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], value: s.itemize, onChange: function (v) { s.itemize = v; calc(); } }),
         agi: GT.moneyInput({ value: s.agi, onChange: function (v) { s.agi = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       GT.append(root, [
         h('div.grid', [
           GT.field('Current market value of the shares', ctl.fmv),
@@ -1735,7 +2264,7 @@ window.TRPL_ORG = {
           GT.field('Filing status', ctl.status),
           GT.field('Your federal income tax bracket', ctl.rate),
           GT.field('Your long-term capital gains rate', ctl.cg, 'In ' + t.taxYear + ' the 15% rate begins at ' + money(t.ltcg[s.status][0]) + ' of taxable income and 20% at ' + money(t.ltcg[s.status][1]) + ' (joint filers: ' + money(t.ltcg.mfj[0]) + ' / ' + money(t.ltcg.mfj[1]) + ').'),
-          GT.field('State capital gains / income tax rate (optional)', ctl.state, 'North Dakota residents: leave at 0 — the state has no separate capital gains tax beyond its low income tax; enter your state’s rate if you live elsewhere.'),
+          GT.field('State capital gains / income tax rate (optional)', ctl.state, 'Enter your state’s income or capital gains tax rate, or leave at 0 if your state has none or you are unsure.'),
           GT.field('Approximate adjusted gross income', ctl.agi, 'For the ½%-of-AGI floor and the 30%-of-AGI limit.'),
           GT.field('Do you itemize deductions?', ctl.itemize)
         ]),
@@ -1789,6 +2318,7 @@ window.TRPL_ORG = {
             GT.li('For gifts over $500 you will file IRS Form 8283 with your return; publicly traded stock does not require an appraisal.')
           ])),
           h('div.actions', [GT.linkBtn('Stock transfer instructions', o.urls.stock, 'primary'), GT.linkBtn('Email the giving team', 'mailto:' + o.contactEmail, 'secondary')]),
+          paperwork(fmv, basis),
           GT.advisorQuestions([
             'Which lot of my shares has the highest gain and longest holding period? (Give those first.)',
             'Will the 30%-of-AGI limit apply to me this year, and would a carryover be usable?',
@@ -1797,6 +2327,49 @@ window.TRPL_ORG = {
             'How does my state treat the deduction and the avoided gain?'
           ]),
           GT.contactLine()
+        ]);
+      }
+      /* ---- Broker transfer letter and Form 8283 (Section A) draft ---- */
+      var P = { donor: '', address: '', broker: '', account: '', desc: '', acquired: '', how: 'Purchase', giftDate: '' };
+      function txt(ph, type) { var i = GT.numberInput({ value: '', placeholder: ph }); i.input.type = type || 'text'; return i; }
+      var pDonor = txt('Name(s) as shown on your return'), pAddr = txt('Street, city, state, ZIP'), pBroker = txt('e.g. Schwab, Fidelity, Morgan Stanley'), pAcct = txt('Last four digits are enough'),
+          pDesc = txt('e.g. 100 shares Apple Inc. (AAPL) common stock'), pAcq = txt('Month and year, e.g. 03/2015'), pGift = txt('', 'date'),
+          pHow = GT.select({ options: [['Purchase', 'Purchase'], ['Gift', 'Gift'], ['Inheritance', 'Inheritance'], ['Exchange', 'Exchange']], value: 'Purchase' });
+      var pStatus = h('p.help');
+      var brk = o.brokerage || {};
+      var brokerLine = brk.dtcNumber ? ('Receiving firm: ' + brk.firm + ' · DTC # ' + brk.dtcNumber + ' · Account name: ' + brk.accountName + ' · Account # ' + brk.accountNumber + (brk.contact ? ' · Contact: ' + brk.contact : '')) : ('Receiving account: please use the DTC instructions on ' + o.urls.stock + '.');
+      function letterText(fmv) {
+        var d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        return [d, '', (pBroker.input.value || '[Brokerage firm]') + '\nAttn: Transfers', '', 'Re: Charitable transfer of securities from account ending in ' + (pAcct.input.value || '[account]'), '', 'To whom it may concern:', '',
+          'Please transfer the following securities from my account as an outright charitable gift to the ' + o.name + ' (EIN ' + o.ein + '): ' + (pDesc.input.value || '[description and number of shares]') + '. Please transfer the shares in kind; do not sell them.', '',
+          brokerLine, '',
+          'Please notify the Library at ' + o.contactEmail + ' when the transfer is complete, and confirm the transfer date to me. The gift is intended for the ' + t.taxYear + ' tax year.', '', 'Thank you.', '', '', (pDonor.input.value || '[Your name]') + '\n' + (pAddr.input.value || '[Your address]')].join('\n');
+      }
+      function f8283(fmv, basis) {
+        var fm = t.irsForms.f8283, F = fm.fields;
+        var gd = pGift.input.value ? new Date(pGift.input.value + 'T12:00:00').toLocaleDateString('en-US') : '';
+        var fields = {};
+        fields[F.name] = pDonor.input.value; fields[F.doneeA] = o.name + ', ' + o.address; fields[F.descA] = pDesc.input.value || 'Publicly traded securities';
+        fields[F.dateA] = gd; fields[F.acquiredA] = pAcq.input.value; fields[F.howA] = pHow.get(); fields[F.costA] = Math.round(basis).toLocaleString('en-US'); fields[F.fmvA] = Math.round(fmv).toLocaleString('en-US'); fields[F.methodA] = 'Average of high and low quoted prices on date of gift';
+        return GT.fillForm(fm.file, fields, { stamp: GT.draftStamp(), fontSize: 8 });
+      }
+      function paperwork(fmv, basis) {
+        var b1 = GT.button('Download broker letter (PDF)', function () {
+          b1.disabled = true; pStatus.textContent = 'Preparing…';
+          GT.makePDF({ title: 'Securities transfer instructions', subtitle: 'Letter to broker', blocks: GT.letterBlocks(letterText(fmv)).concat([{ gap: 10 }, { sig: ['Signature', 'Date'] }]), disclaimer: false })
+            .then(function (b) { GT.downloadBytes(b, 'stock-transfer-letter.pdf'); pStatus.textContent = 'Downloaded. Most brokers also accept this by secure message or have their own charitable transfer form.'; })
+            .catch(function (e) { pStatus.textContent = 'Could not build the PDF (' + e.message + ').'; }).then(function () { b1.disabled = false; });
+        }, 'primary');
+        var b2 = GT.button('Download Form 8283 draft (PDF)', function () {
+          b2.disabled = true; pStatus.textContent = 'Preparing…';
+          f8283(fmv, basis).then(function (b) { GT.downloadBytes(b, 'form-8283-section-a-draft.pdf'); pStatus.innerHTML = 'Downloaded a draft of IRS Form 8283 with Section A, row A completed. Your preparer attaches it to your return when noncash gifts exceed $500 for the year; publicly traded securities need no appraisal. Identifying number and signature are left for you.'; })
+            .catch(function (e) { pStatus.textContent = 'Could not build the form (' + e.message + ').'; }).then(function () { b2.disabled = false; });
+        }, 'highlight');
+        return GT.section('Paperwork for this gift', [
+          h('p.help', 'Optional. Fill in what you know and download a ready-to-sign transfer letter for your broker and a draft of IRS Form 8283 (required with your return when noncash gifts total more than $500). Built in your browser; nothing is sent anywhere.'),
+          h('div.grid', [GT.field('Your name', pDonor), GT.field('Your mailing address', pAddr), GT.field('Brokerage firm', pBroker), GT.field('Account number', pAcct), GT.field('Securities to transfer', pDesc), GT.field('Date of gift', pGift, 'The date the shares reach the Library’s account.'), GT.field('Date you acquired them (mo/yr)', pAcq), GT.field('How you acquired them', pHow)]),
+          h('div.actions', [b1, b2, GT.copyButton(function () { return letterText(fmv); }, 'Copy letter text')]),
+          pStatus
         ]);
       }
       calc();

@@ -825,92 +825,60 @@ window.TRPL_ORG = {
   Object.assign(GT, { pdfSafe: pdfSafe, letterBlocks: letterBlocks, state: state, applyState: applyState, shareUrl: shareUrl, shareButton: shareButton, loadPdfLib: loadPdfLib, downloadBytes: downloadBytes, stripHtml: stripHtml, makePDF: makePDF, fillForm: fillForm, draftStamp: draftStamp, summaryFromDOM: summaryFromDOM, advisorPDF: advisorPDF, shareBar: shareBar, intentStatement: intentStatement, intentStatementSection: intentStatementSection });
 })(window.TRPLGivingTools);
 
-/* @tool Donor-Advised Fund Grant Guide
- * Sponsor-specific steps for recommending a grant, a copyable grant
- * recommendation, and a DAF vs. direct-gift decision helper. */
+/* @tool Year-End Giving Deadlines
+ * Tells a donor, for the gift type they choose, when to start so the gift
+ * counts in the current tax year — and what "counts" means for each type. */
 (function (GT) {
-  var h = GT.h, T = GT.T, ORG = GT.ORG, money = GT.money;
+  var h = GT.h, T = GT.T, ORG = GT.ORG;
 
-  GT.register('daf', {
-    title: 'Give from your donor-advised fund',
-    intro: 'Already have a donor-advised fund? A grant to the Library takes a few minutes. Pick your sponsor for steps, or use the helper to decide whether a DAF makes sense for you.',
-    disclaimerExtra: 'Grants from a donor-advised fund cannot be used to pay for membership benefits, event tickets, or anything of value to you. You already received your deduction when you funded the DAF, so a grant is not deductible again.',
+  var TYPES = {
+    online: { label: 'Credit card or online gift', lead: 0, rule: 'A credit-card gift counts on the date the charge is made — even if you pay the card bill next year. Online gifts made before midnight on December 31 (your local time) count for this year.', steps: ['Give online any time through December 31.', 'Save the emailed receipt; the Library’s year-end summary follows in January.'] },
+    check: { label: 'Check by mail', lead: 3, rule: 'A mailed check counts on the postmark date (the “mailbox rule”), as long as the check clears in the ordinary course. Hand-delivered checks count when delivered.', steps: ['Mail by December 31 with a clear postmark; consider sending it certified late in the month.', 'Write the purpose (e.g., “endowment”) in the memo line.', 'Keep a copy of the check and the postmark receipt.'] },
+    stock: { label: 'Stock or mutual fund shares', lead: 14, rule: 'A gift of securities counts on the date the shares arrive in the Library’s brokerage account — not the date you ask for the transfer. Mutual fund transfers can take two to four weeks.', steps: ['Send your broker the transfer instructions at least two weeks before year-end (three to four for mutual funds).', 'Email the Library so it can watch for the shares and value them on arrival.', 'Your deduction is the average of the high and low price on the day the shares arrive.'] },
+    qcd: { label: 'IRA qualified charitable distribution', lead: 21, rule: 'A QCD counts when the funds leave your IRA and reach the charity. If your custodian issues you a checkbook for the IRA, the check must clear by December 31 — so mail those by mid-December.', steps: ['Request the distribution from your custodian by early December; many have year-end cutoffs.', 'Ask that the check be payable to the Library and sent directly, or to you for forwarding.', 'Tell the Library it is coming — custodian checks often arrive with no donor name.'] },
+    daf: { label: 'Donor-advised fund grant', lead: 0, rule: 'Your deduction happened when you funded the DAF, so a grant recommendation has no tax deadline for you. Sponsors do have year-end cutoffs for processing, and the Library appreciates receiving grants before year-end for budgeting.', steps: ['Recommend the grant by your sponsor’s published cutoff (often mid-December).', 'Contributions *to* your DAF follow the rules for the asset you contribute (cash, check, or stock above).'] },
+    dafFund: { label: 'Contribution to your donor-advised fund', lead: 10, rule: 'Contributions to a DAF are deductible when the sponsor receives them. Cash and wire gifts are quick; securities and complex assets need lead time, and most sponsors publish December cutoffs for each asset type.', steps: ['Check your sponsor’s year-end deadline calendar.', 'Initiate securities transfers at least two weeks early.'] },
+    wire: { label: 'Wire or ACH transfer', lead: 3, rule: 'A wire counts when received by the Library’s bank. Domestic wires usually settle the same business day; ACH can take two to three business days.', steps: ['Request the Library’s wire instructions from ' + ORG().contactEmail + '.', 'Send by December 29 to allow for bank processing.'] },
+    property: { label: 'Real estate, business interests, or other property', lead: 60, rule: 'Property gifts count when title transfers. They require a qualified appraisal (for deductions over $5,000), the Library’s acceptance review, and often environmental or title work.', steps: ['Start the conversation with the Library at least two months before year-end.', 'Line up a qualified appraiser; the appraisal can be dated no earlier than 60 days before the gift.', 'Expect to file Form 8283 Section B with the appraiser’s and the Library’s signatures.'] },
+    endowment: { label: 'Endowment gift for the North Dakota tax credit', lead: 14, rule: 'The gift must be completed in the tax year you claim the credit, by the rules above for whatever asset you give, and the Library must issue its qualification letter for your Schedule ND-1QEC.', steps: ['Designate the gift for the endowment when you give.', 'Request the qualification letter from the Library.', 'If giving stock or by QCD, follow those lead times.'] }
+  };
+
+  GT.register('deadlines', {
+    title: 'When to give so it counts this year',
+    intro: 'Year-end gifts count only if they are complete in time — and “complete” means something different for a check, a stock transfer, and an IRA distribution. Pick your gift type to see the rule and a start-by date.',
+    disclaimerExtra: 'Lead times are practical estimates; custodians, brokers, and fund sponsors set their own cutoffs, which are usually published in early December.',
     render: function (root) {
       var o = ORG(), t = T();
-      var SPONSORS = [
-        ['fidelity', 'Fidelity Charitable', 'https://www.fidelitycharitable.org/'],
-        ['schwab', 'DAFgiving360 (formerly Schwab Charitable)', 'https://www.dafgiving360.org/'],
-        ['vanguard', 'Vanguard Charitable', 'https://www.vanguardcharitable.org/'],
-        ['npt', 'National Philanthropic Trust', 'https://www.nptrust.org/'],
-        ['ndcf', 'North Dakota Community Foundation', 'https://www.ndcf.net/'],
-        ['community', 'Another community foundation'],
-        ['other', 'Another sponsor']
-      ];
-      var s = GT.state('daf', { sponsor: 'fidelity', amount: 1000, purpose: 'general', recurring: false, hItemize: 'no', hAsset: 'stock', hHorizon: 'multi' }); this.getState = function () { return s; };
-      var steps = h('div.section'), rec = h('div.textout');
-      var sp = GT.select({ options: SPONSORS.map(function (x) { return [x[0], x[1]]; }), value: s.sponsor, onChange: function (v) { s.sponsor = v; show(); } });
-      var amt = GT.moneyInput({ value: s.amount, onChange: function (v) { s.amount = v; gen(); } });
-      var purpose = GT.radios({ options: [['general', 'Where needed most'], ['heritage', 'In honor / memory of someone'], ['program', 'A specific program']], value: s.purpose, onChange: function (v) { s.purpose = v; gen(); } });
-      var recurring = GT.checkbox('Make this a recurring grant (annual or monthly)', { value: s.recurring, onChange: function (v) { s.recurring = v; gen(); } });
-      var honoree = GT.numberInput({ value: '', placeholder: 'Name of honoree or program' }); honoree.input.type = 'text'; honoree.input.addEventListener('input', gen);
-
-      function show() {
-        GT.clear(steps);
-        var spn = SPONSORS.filter(function (x) { return x[0] === s.sponsor; })[0];
-        GT.append(steps, [
-          h('ol.steps', [
-            h('li', { html: spn[2] ? 'Log in at <a href="' + spn[2] + '" target="_blank" rel="noopener">' + spn[1] + '</a> and choose “Grant” or “Recommend a grant.”' : 'Log in to your sponsor’s donor portal and choose “Recommend a grant.”' }),
-            h('li', { html: 'Search for <b>' + o.name + '</b>. If several results appear, match the EIN <b>' + o.ein + '</b> and the ' + o.city + ', ' + o.state + ' address.' }),
-            GT.li('Enter the amount and any purpose or honoree in the memo (copy the text below). Choose whether to share your name and address — please do, so we can thank you.'),
-            h('li', { html: 'Submit. Most sponsors send the check or ACH within one to two weeks. Email <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a> if you would like us to confirm receipt.' })
-          ])
+      var s = GT.state('deadlines', { type: 'stock' }); this.getState = function () { return s; };
+      var out = h('div.section');
+      var ctl = { type: GT.radios({ stacked: true, options: Object.keys(TYPES).filter(function (k) { return k !== 'endowment' || (o.features && o.features.ndCredit); }).map(function (k) { return [k, TYPES[k].label]; }), value: s.type, onChange: function (v) { s.type = v; calc(); } }) };
+      GT.applyState(ctl, s);
+      GT.append(root, [GT.field('What are you giving?', ctl.type), out]);
+      function fmt(d) { return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
+      function calc() {
+        GT.clear(out);
+        var ty = TYPES[s.type], now = new Date(), year = now.getFullYear();
+        var yearEnd = new Date(year, 11, 31), startBy = new Date(yearEnd); startBy.setDate(startBy.getDate() - ty.lead);
+        // Dec 31 falls on a weekend some years: brokers and banks are closed
+        var dow = yearEnd.getDay(), lastBiz = new Date(yearEnd); if (dow === 6) lastBiz.setDate(30); if (dow === 0) lastBiz.setDate(29);
+        var daysLeft = Math.ceil((startBy - now) / 864e5);
+        var late = daysLeft < 0, tight = daysLeft >= 0 && daysLeft <= 7;
+        GT.append(out, [
+          h('div.stats', [
+            GT.stat('Start by', ty.lead ? fmt(startBy) : 'December 31', ty.lead ? 'About ' + ty.lead + ' days before year-end.' : 'No lead time needed.', late ? 'highlight' : 'good'),
+            GT.stat('Last business day of ' + year, fmt(lastBiz), 'Banks and brokers are closed on weekends and January 1.', 'muted'),
+            GT.stat(late ? 'Days past the start-by date' : 'Days until the start-by date', String(Math.abs(daysLeft)), late ? 'It may still be possible — call your custodian or broker today and tell the Library.' : tight ? 'Act this week.' : 'Comfortable, if you start on time.', late ? 'highlight' : tight ? 'highlight' : 'muted')
+          ]),
+          GT.callout('info', '<p><b>When it counts:</b> ' + ty.rule + '</p>'),
+          GT.section('What to do', h('ol.steps', ty.steps.map(function (x) { return GT.li(x.replace(/\*([^*]+)\*/g, '<i>$1</i>')); }))),
+          late ? GT.callout('warn', 'If the gift cannot be completed by December 31, it will count for <b>' + (year + 1) + '</b> — still a wonderful gift, just a different tax year. A credit-card gift or DAF grant can be made instantly if timing matters.') : null,
+          s.type === 'stock' ? GT.callout('good', 'Tip: most brokers process electronic (DTC) transfers of listed stocks in one to three business days when the instructions are complete. The two-week cushion is for mutual funds, paper certificates, and the December rush.') : null,
+          h('div.actions', [GT.linkBtn('Give now', o.urls.donate, 'primary'), s.type === 'stock' ? GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary') : null, s.type === 'qcd' ? GT.linkBtn('IRA giving calculator', GT.toolUrl('qcd'), 'secondary') : null, s.type === 'endowment' ? GT.linkBtn('ND tax credit calculator', GT.toolUrl('ndcredit'), 'secondary') : null, GT.linkBtn('Email the giving team', 'mailto:' + o.contactEmail, 'secondary')]),
+          GT.advisorQuestions(['Which tax year do I want this gift to fall in, given my income this year and next?', 'Does my custodian, broker, or fund sponsor have a published year-end cutoff for this kind of transfer?', 'Should part of this gift wait until January to bunch with next year’s giving?']),
+          GT.contactLine()
         ]);
       }
-      function recText() {
-        var memo = s.purpose === 'general' ? 'For the Library’s general charitable purposes.' : s.purpose === 'heritage' ? 'In honor of ' + (honoree.input.value || '[name]') + '.' : 'For ' + (honoree.input.value || '[program]') + ', or where the need is greatest if that program is fully funded.';
-        return 'Grant recommendation\nRecipient: ' + o.name + '\nEIN: ' + o.ein + '\nAddress: ' + o.address + '\nAmount: ' + money(s.amount) + (s.recurring ? ' (recurring)' : '') + '\nPurpose: ' + memo + '\nDonor acknowledgment: please share my name and address with the recipient.';
-      }
-      function gen() { rec.textContent = recText(); }
-
-      // DAF vs direct helper
-      var helperOut = h('div.section');
-      var hs = { itemize: s.hItemize, asset: s.hAsset, horizon: s.hHorizon };
-      var hi = GT.radios({ options: [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], value: hs.itemize, onChange: function (v) { hs.itemize = s.hItemize = v; helper(); } });
-      var ha = GT.radios({ options: [['cash', 'Cash'], ['stock', 'Appreciated stock'], ['ira', 'IRA (age 70½+)']], value: hs.asset, onChange: function (v) { hs.asset = s.hAsset = v; helper(); } });
-      var hh = GT.radios({ options: [['once', 'Give once, now'], ['multi', 'Give over several years']], value: hs.horizon, onChange: function (v) { hs.horizon = s.hHorizon = v; helper(); } });
-      function helper() {
-        GT.clear(helperOut);
-        var msg, tone = 'info';
-        if (hs.asset === 'ira') { msg = '<b>Skip the DAF.</b> Qualified charitable distributions from an IRA cannot go to a donor-advised fund — send the QCD straight to the Library instead. It keeps the amount out of your income entirely.'; tone = 'warn'; }
-        else if (hs.horizon === 'once' && hs.itemize !== 'no') { msg = '<b>Give directly.</b> For a one-time gift while itemizing, a direct gift to the Library is simplest and equally deductible' + (hs.asset === 'stock' ? ' — transfer the shares to the Library and skip the middle step.' : '.'); }
-        else if (hs.horizon === 'once' && hs.itemize === 'no') { msg = '<b>Give directly</b> — and note that in ' + t.taxYear + ' non-itemizers may deduct up to ' + money(t.charitable.nonItemizer.single) + ' (' + money(t.charitable.nonItemizer.mfj) + ' joint) of <i>cash</i> gifts made directly to charities. That deduction does not apply to DAF contributions.'; }
-        else if (hs.itemize === 'no' || hs.itemize === 'unsure') { msg = '<b>A DAF may help.</b> Fund it with several years of giving' + (hs.asset === 'stock' ? ' in appreciated stock' : '') + ' in one year so you can itemize that year (“bunching”), then grant to the Library annually. Compare the numbers with the bunching calculator.'; tone = 'good'; }
-        else { msg = '<b>Either works.</b> You itemize and plan to give over time. A DAF adds convenience (one tax receipt, easy stock gifts, grants on your schedule) at the cost of sponsor fees and a step between you and the Library. Direct gifts each year are just as deductible and let the Library put your gift to work immediately.'; }
-        GT.append(helperOut, [GT.callout(tone, '<p>' + msg + '</p>'), h('div.actions', [hs.asset === 'ira' ? GT.linkBtn('IRA giving calculator', GT.toolUrl('qcd'), 'primary') : (hs.itemize === 'no' && hs.horizon === 'multi') ? GT.linkBtn('Bunching calculator', GT.toolUrl('bunching'), 'primary') : GT.linkBtn('Give now', o.urls.donate, 'primary'), hs.asset === 'stock' ? GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary') : null])]);
-      }
-
-      GT.append(root, [
-        GT.section('Recommend a grant', [
-          h('div.grid', [GT.field('Your fund sponsor', sp), GT.field('Grant amount', amt), GT.field('Purpose', purpose), GT.field('Honoree or program (optional)', honoree)]),
-          h('div', [recurring.el]),
-          steps,
-          rec,
-          h('div.actions', [GT.copyButton(recText, 'Copy grant details'), GT.linkBtn('Donor-advised fund page', o.urls.daf, 'secondary')])
-        ]),
-        GT.section('Should you use a DAF at all?', [
-          h('div.grid', [GT.field('Do you itemize?', hi), GT.field('What would you give?', ha), GT.field('Timing', hh)]),
-          helperOut
-        ]),
-        GT.callout('info', '<p><b>Two more DAF ideas.</b> Name the Library as a <b>successor beneficiary</b> of your fund so your giving continues. ' + (o.communityFoundation ? 'And if you keep a DAF at a community foundation such as the ' + o.communityFoundation + ', ask about recurring grants — set once, delivered every year.' : '') + '</p>'),
-        GT.advisorQuestions([
-          'Should I fund my DAF with appreciated securities rather than cash?',
-          'How much should I contribute this year to make itemizing worthwhile?',
-          'What are my sponsor’s fees and minimum grant size, and are there better options?',
-          'Should the Library be named as a successor beneficiary of my fund?'
-        ]),
-        GT.contactLine()
-      ]);
-      show(); gen(); helper();
+      calc();
     }
   });
 })(window.TRPLGivingTools);

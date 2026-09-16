@@ -54,6 +54,7 @@
           h('p.help', 'The pattern: leave the Library the assets family would pay income tax on, and leave family the assets that pass tax-free. Federal estate tax applies only above ' + money(t.estate.exemption) + ' per person in ' + t.taxYear + '; charitable bequests are fully deductible from it.')
         ]),
         GT.intentCTA(),
+        GT.intentStatementSection(function () { return 'a beneficiary designation (' + ASSETS[s.asset].label + ')'; }),
         GT.advisorQuestions([
           'Which of my accounts is the most heavily taxed if it goes to my children, and would that be the better one to leave to charity?',
           'Are my beneficiary designations consistent with my will and trust? (Designations override the will.)',

@@ -11,7 +11,7 @@
     disclaimerExtra: 'A simplified estimate. It ignores lifetime taxable gifts beyond the amount you enter, generation-skipping tax, state tax rates and brackets, and valuation discounts. Your estate attorney can model this precisely.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { married: 'yes', gross: 8000000, debts: 250000, toSpouse: 0, charity: 500000, gifts: 0, dsue: 0, state: 'ND' };
+      var s = GT.state('estate', { married: 'yes', gross: 8000000, debts: 250000, toSpouse: 0, charity: 500000, gifts: 0, dsue: 0, state: 'ND' });
       var out = h('div.section');
       var ctl = {
         married: GT.radios({ options: [['yes', 'Married'], ['no', 'Single / widowed']], value: 'yes', onChange: function (v) { s.married = v; toggle(); calc(); } }),
@@ -23,6 +23,7 @@
         dsue: GT.moneyInput({ value: s.dsue, onChange: function (v) { s.dsue = v; calc(); } }),
         state: GT.select({ options: STATES.map(function (x) { return [x, x]; }), value: 'ND', onChange: function (v) { s.state = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       var spouseField = GT.field('Amount passing to your spouse', ctl.toSpouse, 'Gifts to a U.S.-citizen spouse are fully deductible (the “marital deduction”).');
       var dsueField = GT.field('Unused exemption from a deceased spouse (“portability”)', ctl.dsue, 'If your spouse died and the estate elected portability, their unused exemption adds to yours.');
       function toggle() { spouseField.style.display = s.married === 'yes' ? '' : 'none'; }

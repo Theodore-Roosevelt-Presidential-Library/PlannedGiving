@@ -10,7 +10,7 @@
     disclaimerExtra: 'Assumes publicly traded securities held more than one year and given to a public charity. Deductions for appreciated property are limited to 30% of adjusted gross income per year, with a five-year carryover. Mutual-fund cost basis and wash-sale rules can complicate the picture — ask your advisor.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { fmv: 25000, basis: 8000, held: 'long', status: 'mfj', rate: '0.24', cg: '0.15', niit: false, state: 0, itemize: 'yes', agi: 200000 };
+      var s = GT.state('stock', { fmv: 25000, basis: 8000, held: 'long', status: 'mfj', rate: '0.24', cg: '0.15', niit: false, state: 0, itemize: 'yes', agi: 200000 });
       var out = h('div.section');
       var ctl = {
         fmv: GT.moneyInput({ value: s.fmv, onChange: function (v) { s.fmv = v; calc(); } }),
@@ -24,6 +24,7 @@
         itemize: GT.radios({ options: [['yes', 'Yes'], ['no', 'No'], ['unsure', 'Not sure']], value: s.itemize, onChange: function (v) { s.itemize = v; calc(); } }),
         agi: GT.moneyInput({ value: s.agi, onChange: function (v) { s.agi = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       GT.append(root, [
         h('div.grid', [
           GT.field('Current market value of the shares', ctl.fmv),
@@ -32,7 +33,7 @@
           GT.field('Filing status', ctl.status),
           GT.field('Your federal income tax bracket', ctl.rate),
           GT.field('Your long-term capital gains rate', ctl.cg, 'In ' + t.taxYear + ' the 15% rate begins at ' + money(t.ltcg[s.status][0]) + ' of taxable income and 20% at ' + money(t.ltcg[s.status][1]) + ' (joint filers: ' + money(t.ltcg.mfj[0]) + ' / ' + money(t.ltcg.mfj[1]) + ').'),
-          GT.field('State capital gains / income tax rate (optional)', ctl.state, 'North Dakota residents: leave at 0 — the state has no separate capital gains tax beyond its low income tax; enter your state’s rate if you live elsewhere.'),
+          GT.field('State capital gains / income tax rate (optional)', ctl.state, 'Enter your state’s income or capital gains tax rate, or leave at 0 if your state has none or you are unsure.'),
           GT.field('Approximate adjusted gross income', ctl.agi, 'For the ½%-of-AGI floor and the 30%-of-AGI limit.'),
           GT.field('Do you itemize deductions?', ctl.itemize)
         ]),
@@ -86,6 +87,7 @@
             GT.li('For gifts over $500 you will file IRS Form 8283 with your return; publicly traded stock does not require an appraisal.')
           ])),
           h('div.actions', [GT.linkBtn('Stock transfer instructions', o.urls.stock, 'primary'), GT.linkBtn('Email the giving team', 'mailto:' + o.contactEmail, 'secondary')]),
+          paperwork(fmv, basis),
           GT.advisorQuestions([
             'Which lot of my shares has the highest gain and longest holding period? (Give those first.)',
             'Will the 30%-of-AGI limit apply to me this year, and would a carryover be usable?',
@@ -94,6 +96,49 @@
             'How does my state treat the deduction and the avoided gain?'
           ]),
           GT.contactLine()
+        ]);
+      }
+      /* ---- Broker transfer letter and Form 8283 (Section A) draft ---- */
+      var P = { donor: '', address: '', broker: '', account: '', desc: '', acquired: '', how: 'Purchase', giftDate: '' };
+      function txt(ph, type) { var i = GT.numberInput({ value: '', placeholder: ph }); i.input.type = type || 'text'; return i; }
+      var pDonor = txt('Name(s) as shown on your return'), pAddr = txt('Street, city, state, ZIP'), pBroker = txt('e.g. Schwab, Fidelity, Morgan Stanley'), pAcct = txt('Last four digits are enough'),
+          pDesc = txt('e.g. 100 shares Apple Inc. (AAPL) common stock'), pAcq = txt('Month and year, e.g. 03/2015'), pGift = txt('', 'date'),
+          pHow = GT.select({ options: [['Purchase', 'Purchase'], ['Gift', 'Gift'], ['Inheritance', 'Inheritance'], ['Exchange', 'Exchange']], value: 'Purchase' });
+      var pStatus = h('p.help');
+      var brk = o.brokerage || {};
+      var brokerLine = brk.dtcNumber ? ('Receiving firm: ' + brk.firm + ' · DTC # ' + brk.dtcNumber + ' · Account name: ' + brk.accountName + ' · Account # ' + brk.accountNumber + (brk.contact ? ' · Contact: ' + brk.contact : '')) : ('Receiving account: please use the DTC instructions on ' + o.urls.stock + '.');
+      function letterText(fmv) {
+        var d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        return [d, '', (pBroker.input.value || '[Brokerage firm]') + '\nAttn: Transfers', '', 'Re: Charitable transfer of securities from account ending in ' + (pAcct.input.value || '[account]'), '', 'To whom it may concern:', '',
+          'Please transfer the following securities from my account as an outright charitable gift to the ' + o.name + ' (EIN ' + o.ein + '): ' + (pDesc.input.value || '[description and number of shares]') + '. Please transfer the shares in kind; do not sell them.', '',
+          brokerLine, '',
+          'Please notify the Library at ' + o.contactEmail + ' when the transfer is complete, and confirm the transfer date to me. The gift is intended for the ' + t.taxYear + ' tax year.', '', 'Thank you.', '', '', (pDonor.input.value || '[Your name]') + '\n' + (pAddr.input.value || '[Your address]')].join('\n');
+      }
+      function f8283(fmv, basis) {
+        var fm = t.irsForms.f8283, F = fm.fields;
+        var gd = pGift.input.value ? new Date(pGift.input.value + 'T12:00:00').toLocaleDateString('en-US') : '';
+        var fields = {};
+        fields[F.name] = pDonor.input.value; fields[F.doneeA] = o.name + ', ' + o.address; fields[F.descA] = pDesc.input.value || 'Publicly traded securities';
+        fields[F.dateA] = gd; fields[F.acquiredA] = pAcq.input.value; fields[F.howA] = pHow.get(); fields[F.costA] = Math.round(basis).toLocaleString('en-US'); fields[F.fmvA] = Math.round(fmv).toLocaleString('en-US'); fields[F.methodA] = 'Average of high and low quoted prices on date of gift';
+        return GT.fillForm(fm.file, fields, { stamp: GT.draftStamp(), fontSize: 8 });
+      }
+      function paperwork(fmv, basis) {
+        var b1 = GT.button('Download broker letter (PDF)', function () {
+          b1.disabled = true; pStatus.textContent = 'Preparing…';
+          GT.makePDF({ title: 'Securities transfer instructions', subtitle: 'Letter to broker', blocks: GT.letterBlocks(letterText(fmv)).concat([{ gap: 10 }, { sig: ['Signature', 'Date'] }]), disclaimer: false })
+            .then(function (b) { GT.downloadBytes(b, 'stock-transfer-letter.pdf'); pStatus.textContent = 'Downloaded. Most brokers also accept this by secure message or have their own charitable transfer form.'; })
+            .catch(function (e) { pStatus.textContent = 'Could not build the PDF (' + e.message + ').'; }).then(function () { b1.disabled = false; });
+        }, 'primary');
+        var b2 = GT.button('Download Form 8283 draft (PDF)', function () {
+          b2.disabled = true; pStatus.textContent = 'Preparing…';
+          f8283(fmv, basis).then(function (b) { GT.downloadBytes(b, 'form-8283-section-a-draft.pdf'); pStatus.innerHTML = 'Downloaded a draft of IRS Form 8283 with Section A, row A completed. Your preparer attaches it to your return when noncash gifts exceed $500 for the year; publicly traded securities need no appraisal. Identifying number and signature are left for you.'; })
+            .catch(function (e) { pStatus.textContent = 'Could not build the form (' + e.message + ').'; }).then(function () { b2.disabled = false; });
+        }, 'highlight');
+        return GT.section('Paperwork for this gift', [
+          h('p.help', 'Optional. Fill in what you know and download a ready-to-sign transfer letter for your broker and a draft of IRS Form 8283 (required with your return when noncash gifts total more than $500). Built in your browser; nothing is sent anywhere.'),
+          h('div.grid', [GT.field('Your name', pDonor), GT.field('Your mailing address', pAddr), GT.field('Brokerage firm', pBroker), GT.field('Account number', pAcct), GT.field('Securities to transfer', pDesc), GT.field('Date of gift', pGift, 'The date the shares reach the Library’s account.'), GT.field('Date you acquired them (mo/yr)', pAcq), GT.field('How you acquired them', pHow)]),
+          h('div.actions', [b1, b2, GT.copyButton(function () { return letterText(fmv); }, 'Copy letter text')]),
+          pStatus
         ]);
       }
       calc();

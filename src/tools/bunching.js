@@ -10,7 +10,7 @@
     disclaimerExtra: 'Federal income tax only. Assumes cash gifts to public charities and that your other deductions stay flat. The non-itemizer deduction does not apply to gifts to donor-advised funds.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { status: 'mfj', over65: 0, agi: 180000, rate: '0.24', giving: 12000, salt: 14000, mortgage: 9000, other: 0, years: 3 };
+      var s = GT.state('bunching', { status: 'mfj', over65: 0, agi: 180000, rate: '0.24', giving: 12000, salt: 14000, mortgage: 9000, other: 0, years: 3 });
       var out = h('div.section');
       var ctl = {
         status: GT.select({ options: GT.FILING, value: s.status, onChange: function (v) { s.status = v; calc(); } }),
@@ -23,6 +23,7 @@
         other: GT.moneyInput({ value: s.other, onChange: function (v) { s.other = v; calc(); } }),
         years: GT.radios({ options: [['2', 'Two years'], ['3', 'Three years']], value: '3', onChange: function (v) { s.years = +v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       GT.append(root, [
         h('div.grid', [
           GT.field('Filing status', ctl.status),

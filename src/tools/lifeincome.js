@@ -12,7 +12,7 @@
     disclaimerExtra: 'Illustrations only. Actual deductions are calculated with IRS actuarial tables (Table 2010CM) and the §7520 rate for the month of the gift; the simplified life-expectancy math here can differ by several percentage points. Charitable gift annuities are regulated by state insurance departments and are issued only by charities licensed to do so.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { kind: 'cga', age: 75, gift: 100000, r7520: t.sec7520.rate, payout: 0.05, termType: 'life', years: 20, rate: '0.24', asset: 'cash', basis: 40000 };
+      var s = GT.state('lifeincome', { kind: 'cga', age: 75, gift: 100000, r7520: t.sec7520.rate, payout: 0.05, termType: 'life', years: 20, rate: '0.24', asset: 'cash', basis: 40000 });
       var out = h('div.section');
       var ctl = {
         kind: GT.radios({ stacked: true, options: [
@@ -29,6 +29,7 @@
         asset: GT.radios({ options: [['cash', 'Cash'], ['stock', 'Appreciated stock']], value: 'cash', onChange: function (v) { s.asset = v; toggle(); calc(); } }),
         basis: GT.moneyInput({ value: s.basis, onChange: function (v) { s.basis = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       var payoutField = GT.field('Annual payout rate', ctl.payout, 'Trusts must pay at least 5% and no more than 50% per year. Lower payout rates leave more for the Library and a larger deduction.');
       var termField = GT.field('Payment period', ctl.termType);
       var yearsField = GT.field('Number of years', ctl.years, 'Term trusts can run up to 20 years.');

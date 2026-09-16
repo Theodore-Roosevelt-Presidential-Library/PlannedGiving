@@ -66,7 +66,17 @@
 <div class="card"><h3>Life-Income Gift Illustrator</h3><p>Educational illustrations of a gift annuity, unitrust, and annuity trust using ACGA rates and the current §7520 rate.</p><div class="links"><a class="btn primary" href="support/tools/lifeincome/">Open tool</a><a class="btn" href="#embed-lifeincome">Embed code</a></div></div>
 <div class="card"><h3>Employer Matching Gift Impact</h3><p>What a gift becomes with an employer match, and how to claim it.</p><div class="links"><a class="btn primary" href="support/tools/matching/">Open tool</a><a class="btn" href="#embed-matching">Embed code</a></div></div>
 <div class="card"><h3>Monthly Giving Calculator</h3><p>A slider that turns a monthly amount into yearly and multi-year impact and links to the monthly giving form.</p><div class="links"><a class="btn primary" href="support/tools/monthly/">Open tool</a><a class="btn" href="#embed-monthly">Embed code</a></div></div>
+<div class="card"><h3>Year-End Giving Deadlines</h3><p>Pick a gift type and see when it counts, the start-by date for this year, and what to do — checks, stock, QCDs, DAFs, wires, property.</p><div class="links"><a class="btn primary" href="support/tools/deadlines/">Open tool</a><a class="btn" href="#embed-deadlines">Embed code</a></div></div>
 </div>
+
+<h2>For Library staff</h2>
+<p>Internal drafting aids that share the same figures and legal details. Not linked from donor-facing pages.</p>
+<div class="grid">
+<div class="card"><h3>Gift Acknowledgment Letters (staff)</h3><p>Staff tool: IRS-compliant acknowledgment letters for every gift type, plus the North Dakota endowment qualification letter donors attach to Schedule ND-1QEC.</p><div class="links"><a class="btn primary" href="support/tools/acknowledgments/">Open tool</a></div></div>
+</div>
+
+<h2>Every tool can be saved and shared</h2>
+<p>Each tool ends with three buttons: <b>Download advisor summary (PDF)</b> — a one-page recap of what was entered, what the tool showed, the notes, and the questions to bring to an advisor, with the Library’s legal details; <b>Print</b>; and <b>Copy link to this scenario</b>, which puts the inputs in the URL so a donor can send their exact scenario to an advisor — or development can send a prospect a link that opens a calculator already filled in (for example <code>?qcd.age=75&amp;qcd.gift=20000</code>). Several tools also produce paperwork: a QCD request letter, a broker transfer letter, a draft IRS Form 8283, a pre-filled Schedule ND-1QEC, and a signable Heritage Society statement of intent. Everything is generated in the browser; nothing a donor types is sent anywhere.</p>
 
 <h2>How to embed</h2>
 <p>Each tool is a single JavaScript file that carries its own styles, the current tax figures, and the Foundation’s details. Paste one snippet where you want the tool to appear. Several tools can share a page.</p>
@@ -128,11 +138,15 @@
 <pre><code>&lt;div data-trpl-tool="monthly"&gt;&lt;/div&gt;
 &lt;script src="https://givingtools.labs.trlibrary.com/dist/monthly.js" async&gt;&lt;/script&gt;</code></pre>
 <p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/monthly/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-deadlines">Year-End Giving Deadlines</h3>
+<pre><code>&lt;div data-trpl-tool="deadlines"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/deadlines.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/deadlines/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
 
 <h2>Try them together</h2>
 <p>A live demo of the Navigator, the way it would sit at the top of the Support page:</p>
 <div class="tool-page"><div data-trpl-tool="navigator" data-tool-base="support/tools/"></div></div>
 <script src="dist/navigator.js" async></script>
-<footer><p>Theodore Roosevelt Presidential Library Foundation · 501(c)(3) · EIN 47-1324043 · 1401 East Calgary Ave, Suite 210, Bismarck, ND 58503 · <a href="mailto:giving@trlibrary.com">giving@trlibrary.com</a></p>
-<p>The Foundation is not a tax, legal, or financial advisor. These tools provide general education and estimates only; please consult your own advisors. Federal figures reflect tax year 2026; reviewed annually. Open source under the MIT license.</p></footer>
+<footer><p>Theodore Roosevelt Presidential Library Foundation · 501(c)(3) nonprofit · EIN 47-1324043 · 1401 East Calgary Ave, Suite 210, Bismarck, ND 58503 · <a href="mailto:giving@trlibrary.com">giving@trlibrary.com</a></p>
+<p>Theodore Roosevelt Presidential Library Foundation is not a tax, legal, or financial advisor. These tools provide general education and estimates only; please consult your own advisors. Federal figures reflect tax year 2026; reviewed annually. Open source under the MIT license.</p></footer>
 </div></body></html>

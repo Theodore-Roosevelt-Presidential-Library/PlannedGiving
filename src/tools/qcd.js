@@ -10,7 +10,7 @@
     disclaimerExtra: 'RMD estimates use the IRS Uniform Lifetime Table and your age this year; your custodian’s figure governs. QCDs must go directly from the custodian to the charity and cannot fund a donor-advised fund.',
     render: function (root) {
       var t = T(), o = ORG();
-      var s = { age: 73, status: 'mfj', rate: '0.22', balance: 500000, gift: 10000, itemize: 'no', agi: 120000 };
+      var s = GT.state('qcd', { age: 73, status: 'mfj', rate: '0.22', balance: 500000, gift: 10000, itemize: 'no', agi: 120000 });
       var out = h('div.section');
       var ctl = {
         age: GT.numberInput({ min: 18, max: 110, value: s.age, onChange: function (v) { s.age = v; calc(); } }),
@@ -21,6 +21,7 @@
         itemize: GT.radios({ options: [['no', 'No'], ['yes', 'Yes'], ['unsure', 'Not sure']], value: s.itemize, onChange: function (v) { s.itemize = v; calc(); } }),
         agi: GT.moneyInput({ value: s.agi, onChange: function (v) { s.agi = v; calc(); } })
       };
+      GT.applyState(ctl, s); this.getState = function () { return s; };
       GT.append(root, [
         h('div.grid', [
           GT.field('Your age this year', ctl.age, 'QCDs begin at 70½. Required minimum distributions begin at ' + t.qcd.rmdAge + ' (' + t.qcd.rmdAgeBornAfter1959 + ' if you were born in 1960 or later).'),
@@ -84,6 +85,7 @@
             GT.li('Keep the Library’s acknowledgment letter for your tax records. Your custodian will report the distribution on Form 1099-R; you or your preparer mark it as a QCD on your return.')
           ])),
           h('div.actions', [GT.linkBtn('IRA giving instructions', o.urls.ira, 'primary'), GT.linkBtn('Email the giving team', 'mailto:' + o.contactEmail, 'secondary')]),
+          letterSection(capped),
           GT.advisorQuestions([
             'How much of my ' + t.taxYear + ' RMD should I direct to charity as a QCD?',
             'Would lowering my AGI with a QCD reduce my Medicare IRMAA surcharge or the taxable share of my Social Security?',
@@ -92,6 +94,35 @@
             'Is my state’s treatment of QCDs the same as the federal treatment?'
           ]),
           GT.contactLine()
+        ]);
+      }
+      /* ---- QCD request letter to the custodian ---- */
+      var L = { donor: '', address: '', custodian: '', account: '' };
+      function txt(ph, ac) { var i = GT.numberInput({ value: '', placeholder: ph }); i.input.type = 'text'; if (ac) i.input.autocomplete = ac; return i; }
+      var lDonor = txt('Your full name', 'name'), lAddr = txt('Street, city, state, ZIP', 'street-address'), lCust = txt('e.g. Fidelity, Schwab, Vanguard, Edward Jones'), lAcct = txt('Last four digits are enough');
+      var lStatus = h('p.help');
+      function letterText(amount) {
+        var d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        return [d, '', (lCust.input.value || '[IRA custodian]') + '\nAttn: Retirement Distributions', '', 'Re: Qualified charitable distribution from IRA ending in ' + (lAcct.input.value || '[account]'),
+          '', 'To whom it may concern:', '',
+          'Please make a qualified charitable distribution under Internal Revenue Code § 408(d)(8) from my IRA in the amount of ' + money(amount) + ', payable to:', '',
+          o.name + '\nTax ID (EIN) ' + o.ein + '\n' + o.address, '',
+          'Please send the check directly to the address above (or to me, made payable to the ' + o.name + ', for forwarding). Do not withhold federal or state income tax from this distribution. Please include my name on the check or in the accompanying correspondence so the Library can identify the gift, and confirm the date the distribution is made so it can be applied to the ' + t.taxYear + ' tax year.', '',
+          'Thank you.', '', '', (lDonor.input.value || '[Your name]') + '\n' + (lAddr.input.value || '[Your address]')].join('\n');
+      }
+      function letterSection(amount) {
+        var btn = GT.button('Download letter (PDF)', function () {
+          btn.disabled = true; lStatus.textContent = 'Preparing…';
+          GT.makePDF({ title: 'Qualified charitable distribution request', subtitle: 'Letter to IRA custodian', blocks: GT.letterBlocks(letterText(amount)).concat([{ gap: 10 }, { sig: ['Signature', 'Date'] }]), disclaimer: false })
+            .then(function (b) { GT.downloadBytes(b, 'qcd-request-letter.pdf'); lStatus.textContent = 'Downloaded. Many custodians also have their own QCD form — this letter works alongside it.'; })
+            .catch(function (e) { lStatus.textContent = 'Could not build the PDF (' + e.message + '); use Copy text instead.'; })
+            .then(function () { btn.disabled = false; });
+        }, 'primary');
+        return GT.section('Letter to your IRA custodian', [
+          h('p.help', 'Fill in the blanks and download a ready-to-sign request for a ' + money(amount) + ' QCD payable to the Library. Nothing you type leaves your browser.'),
+          h('div.grid', [GT.field('Your name', lDonor), GT.field('Your mailing address', lAddr), GT.field('IRA custodian', lCust), GT.field('Account number', lAcct)]),
+          h('div.actions', [btn, GT.copyButton(function () { return letterText(amount); }, 'Copy letter text')]),
+          lStatus
         ]);
       }
       calc();
