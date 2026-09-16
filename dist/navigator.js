@@ -1,4 +1,4 @@
-/* TRPL Giving Tools v1.6.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
+/* TRPL Giving Tools v1.7.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
 /* ============================================================================
  * TRPL Giving Tools — TAX DATA (single source of truth)
  * ----------------------------------------------------------------------------
@@ -91,6 +91,16 @@ window.TRPL_TAX = {
     // adds the federally deducted (or QCD-excluded) portion back to ND taxable income (Form ND-1, line 2).
     requiresQualificationLetter: true, ndAddBack: true,
     eligibleContributionCap: { single: 25000, mfj: 50000, hoh: 25000, mfs: 25000 },
+    // Entities eligible for the endowment credit (40%, $10,000 cap): C corps, S corps, partnerships,
+    // LLCs, estates, trusts, and financial institutions (NDANO; tax.nd.gov endowment credit page).
+    // No statutory $5,000 minimum for entities — the minimum was added for individuals by SB 2160 (2011).
+    entityTypes: [['ccorp', 'A C corporation'], ['passthrough', 'An S corporation, partnership, or LLC'], ['trust', 'A trust'], ['estate', 'An estate'], ['bank', 'A bank or other financial institution']],
+    businessMinGift: 0,
+    // The planned-gift credit (Schedule ND-1PG) is claimed by individuals; entities use the endowment credit.
+    plannedGiftIndividualsOnly: true,
+    // tax.nd.gov does not say whether a taxpayer who makes BOTH an endowment gift and a planned gift in one
+    // year gets two caps or one. Tools must not imply stacking; they raise it as an advisor question.
+    capsStackingUnresolved: true,
     plannedGiftTypes: ['charitable gift annuity', 'deferred charitable gift annuity', 'charitable remainder unitrust', 'charitable remainder annuity trust', 'charitable lead unitrust', 'charitable lead annuity trust', 'pooled income fund', 'charitable life estate', 'paid-up life insurance policy']
   },
   // Fillable state forms bundled in /forms (public documents from tax.nd.gov).
@@ -261,10 +271,10 @@ window.TRPL_ORG = {
  * copy. No dependencies, no build-time framework, ES2017.
  * ========================================================================== */
 (function () {
-  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.6.0') return;
+  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.7.0') return;
 
   var GT = window.TRPLGivingTools = window.TRPLGivingTools || {};
-  GT.version = '1.6.0';
+  GT.version = '1.7.0';
   GT.registry = GT.registry || {};
   GT.mounted = GT.mounted || [];
 
@@ -1100,7 +1110,7 @@ window.TRPL_ORG = {
     if (o.features && o.features.ndCredit && (a.nd === 'yes' || a.nd === 'unsure') && (big || a.size === 'm' || a.goal === 'income')) {
       var nd = t.ndCredit;
       recs.push({ score: a.nd === 'yes' ? 88 : 58, title: 'Claim North Dakota’s 40% charitable giving tax credit', tag: a.nd === 'yes' ? 'Strong fit' : 'If you pay ND tax',
-        why: 'Gifts of ' + money(nd.minGift) + ' or more to {{org}}’s endowment — and planned gifts like gift annuities or remainder trusts — earn a North Dakota income tax credit of ' + pctFmt(nd.rate) + ' of the gift, up to ' + money(nd.maxIndividual) + ' per person or ' + money(nd.maxJoint) + ' for couples filing jointly, with a three-year carryforward. Combined with federal benefits, a large gift can cost less than half its face value.',
+        why: 'Gifts of ' + money(nd.minGift) + ' or more to {{org}}’s endowment — and planned gifts like gift annuities or remainder trusts — earn a North Dakota income tax credit of ' + pctFmt(nd.rate) + ' of the gift, up to ' + money(nd.maxIndividual) + ' per person or ' + money(nd.maxJoint) + ' for couples filing jointly, with a three-year carryforward. Because North Dakota’s income-tax rates are so low, the credit is worth many times what a deduction alone would save on the state return' + (a.goal === 'income' ? ', and a life-income gift qualifies with no minimum' : '') + '. Combined with federal benefits, a large gift can cost less than half its face value.',
         next: 'Run the numbers, then ask us how to designate your gift to the endowment so it qualifies.',
         links: [['ND tax credit calculator', GT.toolUrl('ndcredit')], ['Email the giving team', 'mailto:' + o.contactEmail]] });
       qs.push('Do I have enough North Dakota tax liability over the next four years to use the full 40% credit, and how does the credit affect my federal deduction?');

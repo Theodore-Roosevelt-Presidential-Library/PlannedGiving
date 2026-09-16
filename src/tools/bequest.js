@@ -81,13 +81,15 @@
         ]),
         h('div.infocard', [h('b', 'The details your attorney will need'), h('span', 'Legal name: ' + o.name), h('span', 'Tax ID (EIN): ' + o.ein), h('span', 'Address: ' + o.address), h('span', 'Status: ' + o.taxStatus)]),
         GT.callout('info', '<p><b>Three things worth knowing.</b> A gift in your will is fully deductible from your taxable estate. It is revocable — you can change it at any time. And you don’t need a new will to add it: a short amendment (a “codicil”) usually does the job.</p>'),
+        (o.features && o.features.ndCredit) ? GT.callout('info', '<p><b>If your estate will be settled in North Dakota:</b> estates are among the entities that can claim the state’s 40% endowment credit (up to ' + money(t.ndCredit.maxBusiness) + ') for a gift to {{org}}’s endowment made from estate assets. It offsets North Dakota income tax the estate owes during administration, so it is worth a sentence in your will directing the gift to the <b>endowment</b> and a note to your executor to raise it with the estate’s preparer. Your attorney can confirm whether it applies to your plan. <a href="' + GT.toolUrl('ndcredit') + '?ndcredit.who=business&ndcredit.entity=estate" target="_blank" rel="noopener">See the credit for estates</a>.</p>') : null,
         GT.intentCTA(),
         GT.intentStatementSection(function () { return s.vehicle === 'trust' ? 'a provision in my/our living trust' : 'a bequest in my/our will'; }, text),
         GT.advisorQuestions([
           'Should this be a percentage, a fixed amount, or a share of the residue, given the rest of my plan?',
           'Would leaving retirement-account assets to {{org}} and other assets to family reduce the taxes my heirs pay?',
           'Do I need a new will, or can we add this with a codicil or trust amendment?',
-          'Is my estate likely to owe state estate or inheritance tax where I live?'
+          'Is my estate likely to owe state estate or inheritance tax where I live?',
+          (o.features && o.features.ndCredit) ? 'If my estate is administered in North Dakota, could it claim the 40% endowment credit for this gift, and how should the will be worded so it can?' : null
         ]),
         GT.contactLine()
       ]);

@@ -1,4 +1,4 @@
-/* TRPL Giving Tools v1.6.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
+/* TRPL Giving Tools v1.7.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
 /* ============================================================================
  * TRPL Giving Tools — TAX DATA (single source of truth)
  * ----------------------------------------------------------------------------
@@ -91,6 +91,16 @@ window.TRPL_TAX = {
     // adds the federally deducted (or QCD-excluded) portion back to ND taxable income (Form ND-1, line 2).
     requiresQualificationLetter: true, ndAddBack: true,
     eligibleContributionCap: { single: 25000, mfj: 50000, hoh: 25000, mfs: 25000 },
+    // Entities eligible for the endowment credit (40%, $10,000 cap): C corps, S corps, partnerships,
+    // LLCs, estates, trusts, and financial institutions (NDANO; tax.nd.gov endowment credit page).
+    // No statutory $5,000 minimum for entities — the minimum was added for individuals by SB 2160 (2011).
+    entityTypes: [['ccorp', 'A C corporation'], ['passthrough', 'An S corporation, partnership, or LLC'], ['trust', 'A trust'], ['estate', 'An estate'], ['bank', 'A bank or other financial institution']],
+    businessMinGift: 0,
+    // The planned-gift credit (Schedule ND-1PG) is claimed by individuals; entities use the endowment credit.
+    plannedGiftIndividualsOnly: true,
+    // tax.nd.gov does not say whether a taxpayer who makes BOTH an endowment gift and a planned gift in one
+    // year gets two caps or one. Tools must not imply stacking; they raise it as an advisor question.
+    capsStackingUnresolved: true,
     plannedGiftTypes: ['charitable gift annuity', 'deferred charitable gift annuity', 'charitable remainder unitrust', 'charitable remainder annuity trust', 'charitable lead unitrust', 'charitable lead annuity trust', 'pooled income fund', 'charitable life estate', 'paid-up life insurance policy']
   },
   // Fillable state forms bundled in /forms (public documents from tax.nd.gov).
@@ -261,10 +271,10 @@ window.TRPL_ORG = {
  * copy. No dependencies, no build-time framework, ES2017.
  * ========================================================================== */
 (function () {
-  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.6.0') return;
+  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.7.0') return;
 
   var GT = window.TRPLGivingTools = window.TRPLGivingTools || {};
-  GT.version = '1.6.0';
+  GT.version = '1.7.0';
   GT.registry = GT.registry || {};
   GT.mounted = GT.mounted || [];
 
@@ -1218,13 +1228,15 @@ window.TRPL_ORG = {
         ]),
         h('div.infocard', [h('b', 'The details your attorney will need'), h('span', 'Legal name: ' + o.name), h('span', 'Tax ID (EIN): ' + o.ein), h('span', 'Address: ' + o.address), h('span', 'Status: ' + o.taxStatus)]),
         GT.callout('info', '<p><b>Three things worth knowing.</b> A gift in your will is fully deductible from your taxable estate. It is revocable — you can change it at any time. And you don’t need a new will to add it: a short amendment (a “codicil”) usually does the job.</p>'),
+        (o.features && o.features.ndCredit) ? GT.callout('info', '<p><b>If your estate will be settled in North Dakota:</b> estates are among the entities that can claim the state’s 40% endowment credit (up to ' + money(t.ndCredit.maxBusiness) + ') for a gift to {{org}}’s endowment made from estate assets. It offsets North Dakota income tax the estate owes during administration, so it is worth a sentence in your will directing the gift to the <b>endowment</b> and a note to your executor to raise it with the estate’s preparer. Your attorney can confirm whether it applies to your plan. <a href="' + GT.toolUrl('ndcredit') + '?ndcredit.who=business&ndcredit.entity=estate" target="_blank" rel="noopener">See the credit for estates</a>.</p>') : null,
         GT.intentCTA(),
         GT.intentStatementSection(function () { return s.vehicle === 'trust' ? 'a provision in my/our living trust' : 'a bequest in my/our will'; }, text),
         GT.advisorQuestions([
           'Should this be a percentage, a fixed amount, or a share of the residue, given the rest of my plan?',
           'Would leaving retirement-account assets to {{org}} and other assets to family reduce the taxes my heirs pay?',
           'Do I need a new will, or can we add this with a codicil or trust amendment?',
-          'Is my estate likely to owe state estate or inheritance tax where I live?'
+          'Is my estate likely to owe state estate or inheritance tax where I live?',
+          (o.features && o.features.ndCredit) ? 'If my estate is administered in North Dakota, could it claim the 40% endowment credit for this gift, and how should the will be worded so it can?' : null
         ]),
         GT.contactLine()
       ]);
@@ -1707,6 +1719,10 @@ window.TRPL_ORG = {
           !passes ? GT.callout('warn', 'The charitable portion must be at least <b>10% of the gift</b> for the arrangement to qualify. At these inputs it is about ' + pct(res.deduction / gift, 0) + '. A lower payout, a shorter term, or an older annuitant would fix that.') : null,
           gain > 0 ? GT.callout('info', '<p><b>Funding with appreciated stock:</b> no capital gains tax is due when you transfer the shares. ' + (s.kind === 'cga' ? 'The gain attributable to the annuity portion is reported gradually as part of your payments over your life expectancy rather than all at once.' : 'The trust sells the shares tax-free; gain is passed out to you over time as part of your payments under the trust’s tiered accounting rules.') + ' The deduction is generally limited to ' + pct(dedLimit, 0) + ' of AGI per year with a five-year carryover.</p>') : GT.callout('info', 'Deductions for cash-funded life-income gifts are limited to ' + pct(dedLimit, 0) + ' of adjusted gross income per year, with a five-year carryover.'),
           s.kind === 'cga' ? GT.callout('info', '<p><b>One-time IRA option:</b> people 70½ and older may make a once-in-a-lifetime qualified charitable distribution of up to ' + money(t.qcd.splitInterestLimit) + ' (' + t.taxYear + ') from an IRA to fund a gift annuity or remainder trust. Payments from an IRA-funded annuity are fully taxable, but the transfer itself is excluded from income and can count toward your RMD.</p>') : null,
+          (o.features && o.features.ndCredit) ? (function () {
+            var nd = t.ndCredit, ndCap = nd.maxJoint, est = Math.min(res.deduction * nd.rate, ndCap);
+            return GT.callout('good', '<p><b>North Dakota residents: this is where the state’s 40% credit is strongest.</b> The planned-gift credit is ' + pct(nd.rate, 0) + ' of the <i>deductible portion</i> — about <b>' + money(res.deduction * nd.rate) + '</b> on this illustration' + (res.deduction * nd.rate > nd.maxIndividual ? ', more than the ' + money(nd.maxIndividual) + ' one person can claim in a year (' + money(ndCap) + ' for a couple filing jointly)' : ', within the ' + money(nd.maxIndividual) + ' per-person cap') + ' — with a ' + nd.carryforwardYears + '-year carryforward and no minimum gift. Because North Dakota’s income-tax rates are so low, the credit is worth many times what the deduction alone would save on the state return. <a href="' + GT.toolUrl('ndcredit') + '?ndcredit.kind=planned&ndcredit.deduction=' + Math.round(res.deduction) + '" target="_blank" rel="noopener">Estimate your credit</a>.</p>');
+          })() : null,
           GT.section('What to expect', GT.list(s.kind === 'cga' ? [
             'A gift annuity is a contract, not a trust — simple paperwork, usually a ' + money(10000) + ' to ' + money(25000) + ' minimum, and the payments are a general obligation of the issuing charity.',
             'Payments are fixed for life and never change. Two-life annuities can continue to a spouse.',
@@ -1726,7 +1742,8 @@ window.TRPL_ORG = {
             'Which assets should fund it, and how would the capital gain be handled?',
             'Which month’s §7520 rate gives me the best deduction, and should I time the gift?',
             'Who would issue the annuity or serve as trustee, and what would it cost?',
-            'How would the payments be taxed to me each year, and how does that change if I fund it from my IRA?'
+            'How would the payments be taxed to me each year, and how does that change if I fund it from my IRA?',
+            (o.features && o.features.ndCredit) ? 'If I pay North Dakota income tax, how much of the 40% planned-gift credit could I use over four years, and which year do I claim it?' : null
           ]),
           GT.contactLine()
         ]);
@@ -1983,7 +2000,7 @@ window.TRPL_ORG = {
     if (o.features && o.features.ndCredit && (a.nd === 'yes' || a.nd === 'unsure') && (big || a.size === 'm' || a.goal === 'income')) {
       var nd = t.ndCredit;
       recs.push({ score: a.nd === 'yes' ? 88 : 58, title: 'Claim North Dakota’s 40% charitable giving tax credit', tag: a.nd === 'yes' ? 'Strong fit' : 'If you pay ND tax',
-        why: 'Gifts of ' + money(nd.minGift) + ' or more to {{org}}’s endowment — and planned gifts like gift annuities or remainder trusts — earn a North Dakota income tax credit of ' + pctFmt(nd.rate) + ' of the gift, up to ' + money(nd.maxIndividual) + ' per person or ' + money(nd.maxJoint) + ' for couples filing jointly, with a three-year carryforward. Combined with federal benefits, a large gift can cost less than half its face value.',
+        why: 'Gifts of ' + money(nd.minGift) + ' or more to {{org}}’s endowment — and planned gifts like gift annuities or remainder trusts — earn a North Dakota income tax credit of ' + pctFmt(nd.rate) + ' of the gift, up to ' + money(nd.maxIndividual) + ' per person or ' + money(nd.maxJoint) + ' for couples filing jointly, with a three-year carryforward. Because North Dakota’s income-tax rates are so low, the credit is worth many times what a deduction alone would save on the state return' + (a.goal === 'income' ? ', and a life-income gift qualifies with no minimum' : '') + '. Combined with federal benefits, a large gift can cost less than half its face value.',
         next: 'Run the numbers, then ask us how to designate your gift to the endowment so it qualifies.',
         links: [['ND tax credit calculator', GT.toolUrl('ndcredit')], ['Email the giving team', 'mailto:' + o.contactEmail]] });
       qs.push('Do I have enough North Dakota tax liability over the next four years to use the full 40% credit, and how does the credit affect my federal deduction?');
@@ -2071,17 +2088,23 @@ window.TRPL_ORG = {
     for (var i = 0; i < b.length; i++) { var hi = b[i][0]; if (taxable > lo) tax += (Math.min(taxable, hi) - lo) * b[i][1]; lo = hi; if (taxable <= hi) break; }
     return tax;
   }
+  function ndMarginal(taxable, status) {
+    var b = T().ndBrackets[status] || T().ndBrackets.single;
+    for (var i = 0; i < b.length; i++) if (taxable <= b[i][0]) return b[i][1];
+    return b[b.length - 1][1];
+  }
 
   GT.register('ndcredit', {
     title: 'North Dakota’s 40% tax credit for endowment gifts',
-    intro: 'North Dakota taxpayers who give $5,000 or more to a qualified endowment fund — or make a planned gift such as a gift annuity or remainder trust — can claim a state income tax credit worth 40% of the gift, up to $10,000 per person ($20,000 for couples filing jointly). See what your gift could really cost.',
-    disclaimerExtra: 'The credit is nonrefundable: it offsets North Dakota income tax you would otherwise owe, with unused amounts carried forward up to three years. It generally requires North Dakota tax liability; nonresidents with North Dakota-source income should ask their preparer how credits apply to them. Federal figures assume the IRS rule that reduces a charitable deduction by state credits received (Treas. Reg. § 1.170A-1(h)(3)).',
+    intro: 'North Dakota taxpayers who give $5,000 or more to a qualified endowment fund — or make a planned gift such as a gift annuity or remainder trust — can claim a state income tax credit worth 40% of the gift, up to $10,000 per person ($20,000 for couples filing jointly). Businesses, trusts, and estates can claim it too. See what your gift could really cost.',
+    disclaimerExtra: 'The credit is nonrefundable: it offsets North Dakota income tax you would otherwise owe, with unused amounts carried forward up to three years. It generally requires North Dakota tax liability; nonresidents with North Dakota-source income should ask their preparer how credits apply to them. The Tax Department’s guidance does not say whether the endowment and planned-gift caps are separate when both kinds of gift are made in one year, so these estimates never combine them. Federal figures assume the IRS rule that reduces a charitable deduction by state credits received (Treas. Reg. § 1.170A-1(h)(3)).',
     render: function (root) {
       var t = T(), o = ORG(), c = t.ndCredit;
-      var s = GT.state('ndcredit', { who: 'individual', kind: 'endowment', status: 'mfj', gift: 25000, deduction: 40000, ndIncome: 150000, rate: '0.24', itemize: 'no', saltRoom: false });
+      var s = GT.state('ndcredit', { who: 'individual', entity: 'passthrough', kind: 'endowment', status: 'mfj', gift: 25000, deduction: 40000, ndIncome: 150000, rate: '0.24', itemize: 'no', saltRoom: false });
       var out = h('div.section');
       var ctl = {
         who: GT.radios({ options: [['individual', 'An individual or couple'], ['business', 'A business, trust, or estate']], value: 'individual', onChange: function (v) { s.who = v; toggle(); calc(); } }),
+        entity: GT.select({ options: c.entityTypes, value: 'passthrough', onChange: function (v) { s.entity = v; calc(); } }),
         kind: GT.radios({ stacked: true, options: [
           ['endowment', '<b>An outright gift to the endowment</b> — cash, stock, or other assets given now to {{org}}’s permanent endowment fund'],
           ['planned', '<b>A planned gift</b> — a charitable gift annuity, remainder trust, lead trust, life estate, or paid-up life insurance policy']], value: 'endowment', onChange: function (v) { s.kind = v; toggle(); calc(); } }),
@@ -2095,6 +2118,7 @@ window.TRPL_ORG = {
       };
       GT.applyState(ctl, s); this.getState = function () { return s; };
       var statusField = GT.field('Filing status', ctl.status);
+      var entityField = GT.field('What kind of entity?', ctl.entity, 'The planned-gift credit is for individuals; entities claim the endowment credit, capped at ' + money(c.maxBusiness) + ' per entity per year, with no ' + money(c.minGift) + ' minimum.');
       var giftField = GT.field('Gift to the endowment', ctl.gift, 'Individuals must give at least ' + money(c.minGift) + ' in a year (one gift or several) to qualify. A gift of ' + money(c.maxIndividual / c.rate) + ' earns the full ' + money(c.maxIndividual) + ' credit for one person; ' + money(c.maxJoint / c.rate) + ' earns ' + money(c.maxJoint) + ' for a couple filing jointly.');
       var dedField = GT.field('Federal charitable deduction for the planned gift', ctl.deduction, 'The credit is 40% of the <i>deductible portion</i> of a planned gift — the present value of what {{org}} will eventually receive — not the whole amount you transfer. The <a href="' + GT.toolUrl('lifeincome') + '" target="_blank" rel="noopener">life-income illustrator</a> estimates it.');
       var ndField = GT.field('Your North Dakota taxable income', ctl.ndIncome, 'North Dakota starts from federal taxable income. Used only to estimate how much of the credit you can use this year versus carry forward.');
@@ -2106,6 +2130,7 @@ window.TRPL_ORG = {
         giftField.style.display = s.kind === 'endowment' || biz ? '' : 'none';
         dedField.style.display = s.kind === 'planned' && !biz ? '' : 'none';
         statusField.style.display = biz ? 'none' : '';
+        entityField.style.display = biz ? '' : 'none';
         rateField.style.display = biz ? 'none' : '';
         itemField.style.display = biz ? 'none' : '';
         saltField.style.display = biz ? 'none' : '';
@@ -2114,7 +2139,7 @@ window.TRPL_ORG = {
       GT.append(root, [
         GT.field('Who is making the gift?', ctl.who),
         h('div', { id: 'trpl-nd-kind' }, [GT.field('What kind of gift?', ctl.kind)]),
-        h('div.grid', [statusField, giftField, dedField, ndField, rateField, itemField]),
+        h('div.grid', [entityField, statusField, giftField, dedField, ndField, rateField, itemField]),
         saltField,
         out
       ]);
@@ -2123,6 +2148,13 @@ window.TRPL_ORG = {
         GT.clear(out);
         var biz = s.who === 'business';
         var kind = biz ? 'endowment' : s.kind;
+        var ENTITY = {
+          ccorp: { who: 'The corporation', how: 'Claimed on the corporation’s North Dakota return against its own tax; unused credit carries forward ' + c.carryforwardYears + ' years.' },
+          passthrough: { who: 'The owners', how: 'The entity passes its share of the credit to shareholders, partners, or members, who claim it on their own North Dakota returns.' },
+          trust: { who: 'The trust or its beneficiaries', how: 'Claimed against the trust’s North Dakota fiduciary tax, or passed to beneficiaries with distributed income — the trustee’s preparer decides which.' },
+          estate: { who: 'The estate or its heirs', how: 'An estate that gives to the endowment from estate assets can claim the credit against North Dakota fiduciary income tax, or pass it through to beneficiaries.' },
+          bank: { who: 'The institution', how: 'Claimed against North Dakota financial institution tax.' }
+        };
         var base = kind === 'endowment' ? s.gift : s.deduction;        // amount the 40% applies to
         var cap = biz ? c.maxBusiness : (s.status === 'mfj' ? c.maxJoint : c.maxIndividual);
         var tooSmall = !biz && kind === 'endowment' && s.gift < c.minGift;
@@ -2155,7 +2187,7 @@ window.TRPL_ORG = {
           tooSmall ? GT.callout('warn', '<p><b>Below the minimum.</b> Individuals must give at least ' + money(c.minGift) + ' to a qualified endowment in a tax year to claim the credit. Several gifts during the year can be combined to reach it — or a gift of appreciated stock can get you there tax-efficiently.</p>') : null,
           h('div.stats', [
             GT.stat('North Dakota tax credit', money(credit), credit >= cap ? 'The maximum — ' + money(cap) + (biz ? ' per entity' : s.status === 'mfj' ? ' for a couple filing jointly' : ' per taxpayer') + '.' : pct(c.rate, 0) + ' of ' + money(base) + '.', 'good'),
-            !biz ? GT.stat('Usable this year', money(useNow), ndLiab > 0 ? 'Against an estimated ' + money(ndLiab) + ' of North Dakota tax.' : 'No North Dakota tax estimated at this income.', useNow > 0 ? 'good' : 'muted') : GT.stat('Who uses it', 'Entity or owners', 'C corporations claim it on Form 40; S corporations, partnerships, and trusts pass it through to owners or beneficiaries on Schedule QEC.', 'muted'),
+            !biz ? GT.stat('Usable this year', money(useNow), ndLiab > 0 ? 'Against an estimated ' + money(ndLiab) + ' of North Dakota tax.' : 'No North Dakota tax estimated at this income.', useNow > 0 ? 'good' : 'muted') : GT.stat('Who uses it', ENTITY[s.entity].who, ENTITY[s.entity].how, 'muted'),
             !biz ? GT.stat('Carried forward', money(carry), carry > 0 ? (isFinite(yearsToUse) ? 'Used over about ' + Math.min(yearsToUse, 4) + ' years; up to ' + c.carryforwardYears + ' carryforward years allowed.' : 'Needs North Dakota tax to use.') : 'Nothing to carry forward.', carry > 0 ? 'highlight' : 'muted') : null,
             !biz ? GT.stat('Federal tax saved (est.)', money(fedDed), fedNote, 'muted') : null,
             GT.stat('Net cost of your ' + money(gross) + ' gift', money(Math.max(0, netCost)), 'After the ' + money(usable) + ' of credit you can realistically use' + (!biz && fedDed > 0 ? ' and ' + money(fedDed) + ' in federal savings' : '') + '.', 'highlight')
@@ -2164,13 +2196,18 @@ window.TRPL_ORG = {
           lost > 0 ? GT.callout('warn', '<p>About <b>' + money(lost) + '</b> of the credit would expire unused after the three carryforward years at this level of North Dakota income. Splitting the gift across two tax years, or giving as a couple filing jointly, can capture more of it.</p>') : null,
           !biz && ndLiab === 0 ? GT.callout('warn', '<p><b>This credit only helps if you owe North Dakota income tax.</b> At the income entered, North Dakota tax is zero — the credit would have no value. If you live elsewhere, your own state may have similar incentives; the federal benefits of endowment and planned gifts still apply.</p>') : null,
           kind === 'endowment' && !tooSmall && credit < cap && !biz ? GT.callout('info', 'A gift of <b>' + money(cap / c.rate) + '</b> would earn the full ' + money(cap) + ' credit' + (s.status !== 'mfj' ? '; couples filing jointly can claim up to ' + money(c.maxJoint) + ' on ' + money(c.maxJoint / c.rate) : '') + '.') : null,
+          biz && (s.entity === 'estate' || s.entity === 'trust') ? GT.callout('info', '<p><b>For estates and trusts.</b> A gift to the endowment made from ' + (s.entity === 'estate' ? 'estate assets during administration — including one directed by the will —' : 'trust assets') + ' can earn this credit against North Dakota fiduciary income tax. Whether the credit is worth claiming depends on how much North Dakota income the ' + s.entity + ' has before it closes, so the ' + (s.entity === 'estate' ? 'executor and the estate’s attorney' : 'trustee') + ' should raise it with the preparer early. A ' + money(c.maxBusiness) + ' credit is the most the ' + s.entity + ' can claim in a year.</p>') : null,
+          !biz && !tooSmall && credit > 0 ? (function () {
+            var mr = ndMarginal(s.ndIncome, s.status), dedValue = base * mr, mult = dedValue > 0 ? Math.round(credit / dedValue) : 0;
+            return GT.callout('info', '<p><b>Why the credit matters more in North Dakota than a deduction.</b> The state’s income-tax rates top out at ' + pct(t.ndBrackets.mfj[t.ndBrackets.mfj.length - 1][1], 1) + ', so the same ' + money(base) + ' given outright would save at most about <b>' + money(dedValue) + '</b> of North Dakota tax' + (mr === 0 ? ' — nothing at your income' : '') + ', and only if you itemize. Directed to the endowment' + (kind === 'planned' ? ' or made as a planned gift' : '') + ', it earns a credit of <b>' + money(credit) + '</b>' + (mult > 1 ? ' — roughly ' + mult + ' times more' : '') + '.</p>');
+          })() : null,
           GT.callout('good', '<p><b>Stack the benefits.</b> Give appreciated stock to the endowment and you avoid capital gains tax, may deduct it federally (net of the credit), and claim the 40% state credit. A qualified charitable distribution from an IRA (age 70½+) can also fund the endowment and earn the credit; it stays out of your <i>federal</i> income.</p><p><b>No double-dip on the state return:</b> North Dakota adds the federally deducted portion of the gift — or the IRA amount excluded federally — back to state taxable income (Form ND-1, line 2). At North Dakota’s 1.95–2.5% rates that costs a few hundred dollars at most against a credit worth thousands.</p>'),
           o.ndEndowment.confirmed && o.ndEndowment.fundName
             ? GT.callout('info', '<p>Gifts designated to the <b>' + o.ndEndowment.fundName + '</b> qualify. Please note “endowment” on your gift so it is recorded correctly, and keep {{org}}’s acknowledgment for your ' + (kind === 'endowment' ? c.formEndowment : c.formPlanned) + '.</p>')
             : GT.callout('warn', '<p><b>Before you count on the credit:</b> it applies only to gifts directed to a qualified endowment fund — a permanent, irrevocable fund that spends only its earnings. Please email <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a> and we will confirm how to designate your gift to {{org}}’s endowment so it qualifies.</p>'),
           GT.section('How to claim it', h('ol.steps', [
             GT.li('Make your gift to the ' + o.name + ' and designate it for the <b>endowment</b>' + (kind === 'planned' ? ', or complete the planned gift with your advisor' : '') + '. Ask us for the <b>qualification letter</b> — the schedule requires a statement from the nonprofit that it and the fund meet N.D.C.C. § 57-38-01.21 — and keep it with your acknowledgment.'),
-            GT.li('File <b>' + (kind === 'endowment' ? c.formEndowment : c.formPlanned) + '</b> with your North Dakota return' + (biz ? ' (Schedule QEC for entities)' : '') + '. The statute is ' + c.statute + '.'),
+            GT.li('File <b>' + (kind === 'endowment' ? c.formEndowment : c.formPlanned) + '</b> with your North Dakota return' + (biz ? ' (Schedule QEC for entities)' : '') + '. The statute is ' + c.statute + '.' + (biz && s.entity === 'passthrough' ? ' Owners receive their share on the North Dakota Schedule K-1.' : '')),
             GT.li('If the credit exceeds your North Dakota tax, carry the balance forward — up to ' + c.carryforwardYears + ' more years.'),
             GT.li('On your federal return, reduce the charitable deduction by the credit (your preparer will know the rule) — or use the SALT safe harbor if you have room under the cap.')
           ])),
@@ -2182,7 +2219,9 @@ window.TRPL_ORG = {
             'How does the credit reduce my federal charitable deduction, and can I use the SALT safe harbor for the difference?',
             'Would a QCD from my IRA or a gift of appreciated stock to the endowment be better than cash?',
             'For a planned gift, what is the deductible portion the 40% applies to, and which year do I claim it?',
-            biz ? 'Which of my entities should make the gift, and how does the credit flow through to owners?' : 'If I file jointly, can we claim up to ' + money(c.maxJoint) + '?'
+            biz ? 'Which of my entities should make the gift, and how does the credit flow through to owners?' : 'If I file jointly, can we claim up to ' + money(c.maxJoint) + '?',
+            biz && s.entity === 'estate' ? 'Can the estate claim the credit for the bequest to the endowment, and should the distribution be made while the estate is still open?' : null,
+            !biz ? 'If I make an outright endowment gift and a planned gift in the same year, are the ' + money(c.maxIndividual) + ' caps separate or combined?' : null
           ]),
           GT.contactLine()
         ]);

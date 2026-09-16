@@ -15,7 +15,7 @@ const ORDER = ['navigator', 'ndcredit', 'qcd', 'stock', 'bunching', 'daf', 'bequ
 const STAFF = ['acknowledgments'];
 const BLURB = {
   navigator: 'Seven questions that point a visitor to the right giving method, with reasons, links, and questions for their advisor. Built for the top of the Support page.',
-  ndcredit: 'North Dakota’s 40% state credit for endowment and planned gifts: credit size, how much a donor can use, the federal-deduction interplay, and net cost.',
+  ndcredit: 'North Dakota’s 40% state credit for endowment and planned gifts — for individuals, businesses, trusts, and estates: credit size, how much a donor can use, why it beats a deduction in ND, the federal-deduction interplay, and net cost.',
   qcd: 'Eligibility check, RMD estimate, and a side-by-side of giving from an IRA versus withdrawing and giving cash.',
   stock: 'Give shares or sell-then-give: capital gains avoided, deduction value, net cost, and transfer steps.',
   bunching: 'Every-year giving versus bunching two or three years into one, with the new ½%-of-AGI floor built in.',

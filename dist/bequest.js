@@ -1,4 +1,4 @@
-/* TRPL Giving Tools v1.6.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
+/* TRPL Giving Tools v1.7.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
 /* ============================================================================
  * TRPL Giving Tools — TAX DATA (single source of truth)
  * ----------------------------------------------------------------------------
@@ -91,6 +91,16 @@ window.TRPL_TAX = {
     // adds the federally deducted (or QCD-excluded) portion back to ND taxable income (Form ND-1, line 2).
     requiresQualificationLetter: true, ndAddBack: true,
     eligibleContributionCap: { single: 25000, mfj: 50000, hoh: 25000, mfs: 25000 },
+    // Entities eligible for the endowment credit (40%, $10,000 cap): C corps, S corps, partnerships,
+    // LLCs, estates, trusts, and financial institutions (NDANO; tax.nd.gov endowment credit page).
+    // No statutory $5,000 minimum for entities — the minimum was added for individuals by SB 2160 (2011).
+    entityTypes: [['ccorp', 'A C corporation'], ['passthrough', 'An S corporation, partnership, or LLC'], ['trust', 'A trust'], ['estate', 'An estate'], ['bank', 'A bank or other financial institution']],
+    businessMinGift: 0,
+    // The planned-gift credit (Schedule ND-1PG) is claimed by individuals; entities use the endowment credit.
+    plannedGiftIndividualsOnly: true,
+    // tax.nd.gov does not say whether a taxpayer who makes BOTH an endowment gift and a planned gift in one
+    // year gets two caps or one. Tools must not imply stacking; they raise it as an advisor question.
+    capsStackingUnresolved: true,
     plannedGiftTypes: ['charitable gift annuity', 'deferred charitable gift annuity', 'charitable remainder unitrust', 'charitable remainder annuity trust', 'charitable lead unitrust', 'charitable lead annuity trust', 'pooled income fund', 'charitable life estate', 'paid-up life insurance policy']
   },
   // Fillable state forms bundled in /forms (public documents from tax.nd.gov).
@@ -261,10 +271,10 @@ window.TRPL_ORG = {
  * copy. No dependencies, no build-time framework, ES2017.
  * ========================================================================== */
 (function () {
-  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.6.0') return;
+  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.7.0') return;
 
   var GT = window.TRPLGivingTools = window.TRPLGivingTools || {};
-  GT.version = '1.6.0';
+  GT.version = '1.7.0';
   GT.registry = GT.registry || {};
   GT.mounted = GT.mounted || [];
 
@@ -1057,13 +1067,15 @@ window.TRPL_ORG = {
         ]),
         h('div.infocard', [h('b', 'The details your attorney will need'), h('span', 'Legal name: ' + o.name), h('span', 'Tax ID (EIN): ' + o.ein), h('span', 'Address: ' + o.address), h('span', 'Status: ' + o.taxStatus)]),
         GT.callout('info', '<p><b>Three things worth knowing.</b> A gift in your will is fully deductible from your taxable estate. It is revocable — you can change it at any time. And you don’t need a new will to add it: a short amendment (a “codicil”) usually does the job.</p>'),
+        (o.features && o.features.ndCredit) ? GT.callout('info', '<p><b>If your estate will be settled in North Dakota:</b> estates are among the entities that can claim the state’s 40% endowment credit (up to ' + money(t.ndCredit.maxBusiness) + ') for a gift to {{org}}’s endowment made from estate assets. It offsets North Dakota income tax the estate owes during administration, so it is worth a sentence in your will directing the gift to the <b>endowment</b> and a note to your executor to raise it with the estate’s preparer. Your attorney can confirm whether it applies to your plan. <a href="' + GT.toolUrl('ndcredit') + '?ndcredit.who=business&ndcredit.entity=estate" target="_blank" rel="noopener">See the credit for estates</a>.</p>') : null,
         GT.intentCTA(),
         GT.intentStatementSection(function () { return s.vehicle === 'trust' ? 'a provision in my/our living trust' : 'a bequest in my/our will'; }, text),
         GT.advisorQuestions([
           'Should this be a percentage, a fixed amount, or a share of the residue, given the rest of my plan?',
           'Would leaving retirement-account assets to {{org}} and other assets to family reduce the taxes my heirs pay?',
           'Do I need a new will, or can we add this with a codicil or trust amendment?',
-          'Is my estate likely to owe state estate or inheritance tax where I live?'
+          'Is my estate likely to owe state estate or inheritance tax where I live?',
+          (o.features && o.features.ndCredit) ? 'If my estate is administered in North Dakota, could it claim the 40% endowment credit for this gift, and how should the will be worded so it can?' : null
         ]),
         GT.contactLine()
       ]);

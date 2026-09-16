@@ -9,7 +9,7 @@ Every tool is one `<script>` tag. No framework, no build step on the host page, 
 | Tool | Embed file | What it does |
 |---|---|---|
 | Giving Navigator | `dist/navigator.js` | Six questions → ranked giving options with reasons, links, and advisor questions. Built for the top of `/support`. |
-| ND tax credit calculator | `dist/ndcredit.js` | North Dakota's 40% credit for endowment and planned gifts (N.D.C.C. § 57-38-01.21): credit, usable amount, carryforward, federal interplay, net cost. |
+| ND tax credit calculator | `dist/ndcredit.js` | North Dakota's 40% credit for endowment and planned gifts (N.D.C.C. § 57-38-01.21), for individuals and for C corps, pass-throughs, trusts, and estates: credit, usable amount, carryforward, credit-vs-deduction comparison, federal interplay, net cost. |
 | IRA / QCD calculator | `dist/qcd.js` | Eligibility, RMD estimate, QCD vs. withdraw-and-give comparison. |
 | Stock gift calculator | `dist/stock.js` | Give shares vs. sell-then-give: gains avoided, deduction value, net cost. |
 | Bunching comparison | `dist/bunching.js` | Every-year giving vs. bunching 2–3 years, with the 2026 ½%-of-AGI floor. |

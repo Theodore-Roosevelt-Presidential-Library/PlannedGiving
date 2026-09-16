@@ -1,4 +1,4 @@
-/* TRPL Giving Tools v1.6.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
+/* TRPL Giving Tools v1.7.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
 /* ============================================================================
  * TRPL Giving Tools — TAX DATA (single source of truth)
  * ----------------------------------------------------------------------------
@@ -91,6 +91,16 @@ window.TRPL_TAX = {
     // adds the federally deducted (or QCD-excluded) portion back to ND taxable income (Form ND-1, line 2).
     requiresQualificationLetter: true, ndAddBack: true,
     eligibleContributionCap: { single: 25000, mfj: 50000, hoh: 25000, mfs: 25000 },
+    // Entities eligible for the endowment credit (40%, $10,000 cap): C corps, S corps, partnerships,
+    // LLCs, estates, trusts, and financial institutions (NDANO; tax.nd.gov endowment credit page).
+    // No statutory $5,000 minimum for entities — the minimum was added for individuals by SB 2160 (2011).
+    entityTypes: [['ccorp', 'A C corporation'], ['passthrough', 'An S corporation, partnership, or LLC'], ['trust', 'A trust'], ['estate', 'An estate'], ['bank', 'A bank or other financial institution']],
+    businessMinGift: 0,
+    // The planned-gift credit (Schedule ND-1PG) is claimed by individuals; entities use the endowment credit.
+    plannedGiftIndividualsOnly: true,
+    // tax.nd.gov does not say whether a taxpayer who makes BOTH an endowment gift and a planned gift in one
+    // year gets two caps or one. Tools must not imply stacking; they raise it as an advisor question.
+    capsStackingUnresolved: true,
     plannedGiftTypes: ['charitable gift annuity', 'deferred charitable gift annuity', 'charitable remainder unitrust', 'charitable remainder annuity trust', 'charitable lead unitrust', 'charitable lead annuity trust', 'pooled income fund', 'charitable life estate', 'paid-up life insurance policy']
   },
   // Fillable state forms bundled in /forms (public documents from tax.nd.gov).
@@ -261,10 +271,10 @@ window.TRPL_ORG = {
  * copy. No dependencies, no build-time framework, ES2017.
  * ========================================================================== */
 (function () {
-  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.6.0') return;
+  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.7.0') return;
 
   var GT = window.TRPLGivingTools = window.TRPLGivingTools || {};
-  GT.version = '1.6.0';
+  GT.version = '1.7.0';
   GT.registry = GT.registry || {};
   GT.mounted = GT.mounted || [];
 
@@ -1074,6 +1084,10 @@ window.TRPL_ORG = {
           !passes ? GT.callout('warn', 'The charitable portion must be at least <b>10% of the gift</b> for the arrangement to qualify. At these inputs it is about ' + pct(res.deduction / gift, 0) + '. A lower payout, a shorter term, or an older annuitant would fix that.') : null,
           gain > 0 ? GT.callout('info', '<p><b>Funding with appreciated stock:</b> no capital gains tax is due when you transfer the shares. ' + (s.kind === 'cga' ? 'The gain attributable to the annuity portion is reported gradually as part of your payments over your life expectancy rather than all at once.' : 'The trust sells the shares tax-free; gain is passed out to you over time as part of your payments under the trust’s tiered accounting rules.') + ' The deduction is generally limited to ' + pct(dedLimit, 0) + ' of AGI per year with a five-year carryover.</p>') : GT.callout('info', 'Deductions for cash-funded life-income gifts are limited to ' + pct(dedLimit, 0) + ' of adjusted gross income per year, with a five-year carryover.'),
           s.kind === 'cga' ? GT.callout('info', '<p><b>One-time IRA option:</b> people 70½ and older may make a once-in-a-lifetime qualified charitable distribution of up to ' + money(t.qcd.splitInterestLimit) + ' (' + t.taxYear + ') from an IRA to fund a gift annuity or remainder trust. Payments from an IRA-funded annuity are fully taxable, but the transfer itself is excluded from income and can count toward your RMD.</p>') : null,
+          (o.features && o.features.ndCredit) ? (function () {
+            var nd = t.ndCredit, ndCap = nd.maxJoint, est = Math.min(res.deduction * nd.rate, ndCap);
+            return GT.callout('good', '<p><b>North Dakota residents: this is where the state’s 40% credit is strongest.</b> The planned-gift credit is ' + pct(nd.rate, 0) + ' of the <i>deductible portion</i> — about <b>' + money(res.deduction * nd.rate) + '</b> on this illustration' + (res.deduction * nd.rate > nd.maxIndividual ? ', more than the ' + money(nd.maxIndividual) + ' one person can claim in a year (' + money(ndCap) + ' for a couple filing jointly)' : ', within the ' + money(nd.maxIndividual) + ' per-person cap') + ' — with a ' + nd.carryforwardYears + '-year carryforward and no minimum gift. Because North Dakota’s income-tax rates are so low, the credit is worth many times what the deduction alone would save on the state return. <a href="' + GT.toolUrl('ndcredit') + '?ndcredit.kind=planned&ndcredit.deduction=' + Math.round(res.deduction) + '" target="_blank" rel="noopener">Estimate your credit</a>.</p>');
+          })() : null,
           GT.section('What to expect', GT.list(s.kind === 'cga' ? [
             'A gift annuity is a contract, not a trust — simple paperwork, usually a ' + money(10000) + ' to ' + money(25000) + ' minimum, and the payments are a general obligation of the issuing charity.',
             'Payments are fixed for life and never change. Two-life annuities can continue to a spouse.',
@@ -1093,7 +1107,8 @@ window.TRPL_ORG = {
             'Which assets should fund it, and how would the capital gain be handled?',
             'Which month’s §7520 rate gives me the best deduction, and should I time the gift?',
             'Who would issue the annuity or serve as trustee, and what would it cost?',
-            'How would the payments be taxed to me each year, and how does that change if I fund it from my IRA?'
+            'How would the payments be taxed to me each year, and how does that change if I fund it from my IRA?',
+            (o.features && o.features.ndCredit) ? 'If I pay North Dakota income tax, how much of the 40% planned-gift credit could I use over four years, and which year do I claim it?' : null
           ]),
           GT.contactLine()
         ]);
