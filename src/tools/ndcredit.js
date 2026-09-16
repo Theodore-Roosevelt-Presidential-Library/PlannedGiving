@@ -35,7 +35,7 @@
       };
       var statusField = GT.field('Filing status', ctl.status);
       var giftField = GT.field('Gift to the endowment', ctl.gift, 'Individuals must give at least ' + money(c.minGift) + ' in a year (one gift or several) to qualify. A gift of ' + money(c.maxIndividual / c.rate) + ' earns the full ' + money(c.maxIndividual) + ' credit for one person; ' + money(c.maxJoint / c.rate) + ' earns ' + money(c.maxJoint) + ' for a couple filing jointly.');
-      var dedField = GT.field('Federal charitable deduction for the planned gift', ctl.deduction, 'The credit is 40% of the <i>deductible portion</i> of a planned gift — the present value of what the Library will eventually receive — not the whole amount you transfer. The <a href="' + o.urls.tools + 'tools/lifeincome.html" target="_blank" rel="noopener">life-income illustrator</a> estimates it.');
+      var dedField = GT.field('Federal charitable deduction for the planned gift', ctl.deduction, 'The credit is 40% of the <i>deductible portion</i> of a planned gift — the present value of what the Library will eventually receive — not the whole amount you transfer. The <a href="' + GT.toolUrl('lifeincome') + '" target="_blank" rel="noopener">life-income illustrator</a> estimates it.');
       var ndField = GT.field('Your North Dakota taxable income', ctl.ndIncome, 'North Dakota starts from federal taxable income. Used only to estimate how much of the credit you can use this year versus carry forward.');
       var rateField = GT.field('Your federal tax bracket', ctl.rate);
       var itemField = GT.field('Do you itemize federal deductions?', ctl.itemize);
@@ -113,7 +113,7 @@
             GT.li('If the credit exceeds your North Dakota tax, carry the balance forward — up to ' + c.carryforwardYears + ' more years.'),
             GT.li('On your federal return, reduce the charitable deduction by the credit (your preparer will know the rule) — or use the SALT safe harbor if you have room under the cap.')
           ])),
-          h('div.actions', [GT.linkBtn('Give to the endowment', o.ndEndowment.giveUrl || o.urls.donate, 'primary'), GT.linkBtn('Stock gift calculator', o.urls.tools + 'tools/stock.html', 'secondary'), GT.linkBtn('ND Tax Commissioner: endowment credit', 'https://www.tax.nd.gov/income-tax-incentives/endowment-fund-contribution-tax-credit', 'secondary')]),
+          h('div.actions', [GT.linkBtn('Give to the endowment', o.ndEndowment.giveUrl || o.urls.donate, 'primary'), GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary'), GT.linkBtn('ND Tax Commissioner: endowment credit', 'https://www.tax.nd.gov/income-tax-incentives/endowment-fund-contribution-tax-credit', 'secondary')]),
           GT.advisorQuestions([
             'Does my gift qualify — is the fund a “qualified endowment” under N.D.C.C. § 57-38-01.21, and have I met the ' + money(c.minGift) + ' minimum this year?',
             'How much North Dakota tax will I owe this year and the next three, and should I size or split the gift to use the whole credit?',

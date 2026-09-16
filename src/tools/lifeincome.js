@@ -110,7 +110,7 @@
             'No additional contributions are permitted after funding, and the IRS applies an extra test to be sure the trust is unlikely to run out of money.',
             'Like a unitrust, it requires a trustee, a tax return, and professional setup.'
           ])),
-          h('div.actions', [GT.linkBtn('Email the giving team', 'mailto:' + o.contactEmail, 'primary'), GT.linkBtn('Give from your IRA instead', o.urls.tools + 'tools/qcd.html', 'secondary')]),
+          h('div.actions', [GT.linkBtn('Email the giving team', 'mailto:' + o.contactEmail, 'primary'), GT.linkBtn('Give from your IRA instead', GT.toolUrl('qcd'), 'secondary')]),
           GT.advisorQuestions([
             'Given my income needs and my heirs, is a gift annuity or a remainder trust the better fit — or neither?',
             'Which assets should fund it, and how would the capital gain be handled?',

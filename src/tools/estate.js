@@ -63,7 +63,7 @@
           inh ? GT.callout('warn', '<p><b>' + s.state + ' has an inheritance tax</b> paid by certain heirs based on their relationship to you. Bequests to charities are exempt.</p>') : null,
           (!st && !inh) ? GT.callout('good', s.state + ' has no state estate or inheritance tax. Only the federal exemption matters, and it is ' + money(t.estate.exemption) + ' per person in ' + t.taxYear + ' (' + money(t.estate.exemption * 2) + ' for a married couple using portability).') : null,
           GT.callout('info', '<p><b>Even when there is no estate tax</b>, how you give matters: leaving retirement accounts to the Library and other assets to family avoids the income tax heirs would owe on the retirement money. See the beneficiary designation guide.</p>'),
-          h('div.actions', [GT.linkBtn('Write your bequest', o.urls.tools + 'tools/bequest.html', 'primary'), GT.linkBtn('Beneficiary designation guide', o.urls.tools + 'tools/beneficiary.html', 'secondary'), GT.linkBtn('Heritage Society', o.urls.heritage, 'secondary')]),
+          h('div.actions', [GT.linkBtn('Write your bequest', GT.toolUrl('bequest'), 'primary'), GT.linkBtn('Beneficiary designation guide', GT.toolUrl('beneficiary'), 'secondary'), GT.linkBtn('Heritage Society', o.urls.heritage, 'secondary')]),
           GT.advisorQuestions([
             'Is my estate likely to exceed the federal or my state’s exemption, now or as it grows?',
             'Have we elected portability so my spouse’s unused exemption is preserved?',

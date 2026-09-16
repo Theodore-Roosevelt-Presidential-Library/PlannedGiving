@@ -21,11 +21,14 @@ Several tools on one page: either load each tool's script (the shared runtime is
 | `data-accent="#1B4532"` | Override the accent color. |
 | `data-hide-header="true"` | Hide the tool's own title and intro (when the page already has a heading). |
 | `data-compact="true"` | Tighter padding. |
+| `data-tool-base="/support/tools/"` | Base URL for links between tools (default `https://www.trlibrary.com/support/tools/`). Links are `base + tool name`. Use a relative value on the Pages site. |
+| `data-load-fonts="false"` | Skip loading Dharma Gothic E / Clearface / Frutiger (they are loaded from the same host as the script by default; harmless when the page already has them). |
 | `data-intent-form-url="https://…"` | DonorPerfect (or any) online form for the letter of intent. Used by the **intent** tool (embedded in an iframe) and by every "Tell us about your gift" button. Leave unset for a pre-filled email fallback. |
 | `data-form-height="1100"` | Iframe height for the intent form. |
 | `data-embed-form="false"` | Force the email fallback even when a form URL is set. |
 | `data-contact-email`, `data-contact-name`, `data-contact-phone` | Override the contact shown in the tool. |
 | `data-nd-fund-name="…"` / `data-nd-confirmed="true"` | Name of the Foundation's qualified endowment fund for the ND credit tool, and whether its qualified status has been confirmed. Until confirmed, the tool tells donors to check with the giving team. |
+| `data-dtd-key="…"` | Double the Donation public API key. Adds the employer matching-gift search (the same plugin already on trlibrary.com/matching-gifts) beneath the **matching** tool. |
 | `data-offers-gift-annuities="true"` | Only once the Foundation holds an ND Certificate of Exemption; removes the "not currently offered" notice in the life-income illustrator. |
 
 ## Fonts and styling
@@ -46,7 +49,7 @@ All styles are scoped under `.trpl-gt` and prefixed `trpl-`, so nothing leaks in
 For platforms that block third-party scripts:
 
 ```html
-<iframe src="https://givingtools.labs.trlibrary.com/tools/qcd-embed.html"
+<iframe src="https://givingtools.labs.trlibrary.com/support/tools/qcd/embed"
         title="IRA giving calculator" style="width:100%;height:1400px;border:0" loading="lazy"></iframe>
 ```
 
@@ -63,7 +66,7 @@ For platforms that block third-party scripts:
 <script src="https://givingtools.labs.trlibrary.com/dist/navigator.js" async></script>
 ```
 
-The Navigator links to trlibrary.com pages defined in `src/config.js` (`urls.*`). If a page URL changes, update the config and rebuild.
+The Navigator links to trlibrary.com pages defined in `src/config.js` (`urls.*`) and to the other tools at `urls.toolBase + name`. If a page URL changes, update the config and rebuild.
 
 ## Versioning and caching
 

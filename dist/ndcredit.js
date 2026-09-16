@@ -1,4 +1,4 @@
-/* TRPL Giving Tools v1.1.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
+/* TRPL Giving Tools v1.2.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
 /* ============================================================================
  * TRPL Giving Tools — TAX DATA (single source of truth)
  * ----------------------------------------------------------------------------
@@ -145,6 +145,11 @@ window.TRPL_ORG = {
    * label CGAs as "not currently offered by the Foundation". */
   offersGiftAnnuities: false,
 
+  /* Double the Donation public plugin key (the trlibrary.com/matching-gifts
+   * page already runs this plugin). Set it here or pass data-dtd-key on the
+   * matching tool's placeholder to embed the employer search. */
+  doubleTheDonationKey: '',
+
   /* North Dakota Charitable Giving Tax Credit. Gifts qualify only when they go
    * to a "qualified endowment fund" — permanent, irrevocable, spending only
    * income/appreciation — held by an ND-incorporated 501(c)(3). Fill in the
@@ -170,6 +175,12 @@ window.TRPL_ORG = {
     benefactor: 'https://www.trlibrary.com/benefactor-societies',
     matching: 'https://www.trlibrary.com/matching-gifts',
     tools: 'https://givingtools.labs.trlibrary.com/',
+    /* Where the individual tool pages live. Cross-links between tools use
+     * toolBase + <tool name>, so when the tools are placed on trlibrary.com at
+     * /support/tools/<name> every link stays on the main site. The GitHub
+     * Pages site mirrors the same path structure. Override per embed with
+     * data-tool-base. */
+    toolBase: 'https://www.trlibrary.com/support/tools/',
     /* DonorPerfect online form for "I've included the Library in my plans".
      * Leave blank to fall back to a pre-filled email to contactEmail. */
     intentForm: ''
@@ -190,10 +201,10 @@ window.TRPL_ORG = {
  * copy. No dependencies, no build-time framework, ES2017.
  * ========================================================================== */
 (function () {
-  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.1.0') return;
+  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.2.0') return;
 
   var GT = window.TRPLGivingTools = window.TRPLGivingTools || {};
-  GT.version = '1.1.0';
+  GT.version = '1.2.0';
   GT.registry = GT.registry || {};
   GT.mounted = GT.mounted || [];
 
@@ -446,6 +457,7 @@ window.TRPL_ORG = {
       h('p.fine', { html: 'Federal figures reflect tax year <strong>' + t.taxYear + '</strong> (last reviewed ' + t.lastReviewed + '). ' + t.lawNote + ' State and local taxes vary and are only partly reflected. ' + o.name + ' · ' + o.taxStatus + ' · EIN ' + o.ein + ' · <a href="' + o.urls.tools + '" target="_blank" rel="noopener">About these tools</a>' })
     ]);
   }
+  function toolUrl(name) { var b = ORG().urls.toolBase || ORG().urls.tools; return b.replace(/\/?$/, '/') + name; }
   function contactLine() {
     var o = ORG();
     var who = o.contactName ? o.contactName + ' · ' : '';
@@ -470,6 +482,7 @@ window.TRPL_ORG = {
   function applyOverrides(opts) {
     var o = ORG();
     if (opts.intentFormUrl) o.urls.intentForm = opts.intentFormUrl;
+    if (opts.toolBase) o.urls.toolBase = opts.toolBase;
     if (opts.contactEmail) o.contactEmail = opts.contactEmail;
     if (opts.contactName) o.contactName = opts.contactName;
     if (opts.contactPhone) o.contactPhone = opts.contactPhone;
@@ -525,7 +538,7 @@ window.TRPL_ORG = {
     field: field, moneyInput: moneyInput, numberInput: numberInput, percentInput: percentInput, select: select, radios: radios, checks: checks, checkbox: checkbox,
     FILING: FILING, BRACKETS: BRACKETS,
     stat: stat, bars: bars, callout: callout, section: section, list: list, li: li, button: button, linkBtn: linkBtn, copyButton: copyButton,
-    advisorQuestions: advisorQuestions, disclaimer: disclaimer, contactLine: contactLine, intentCTA: intentCTA
+    advisorQuestions: advisorQuestions, disclaimer: disclaimer, toolUrl: toolUrl, contactLine: contactLine, intentCTA: intentCTA
   });
 })();
 
@@ -566,7 +579,7 @@ window.TRPL_ORG = {
       };
       var statusField = GT.field('Filing status', ctl.status);
       var giftField = GT.field('Gift to the endowment', ctl.gift, 'Individuals must give at least ' + money(c.minGift) + ' in a year (one gift or several) to qualify. A gift of ' + money(c.maxIndividual / c.rate) + ' earns the full ' + money(c.maxIndividual) + ' credit for one person; ' + money(c.maxJoint / c.rate) + ' earns ' + money(c.maxJoint) + ' for a couple filing jointly.');
-      var dedField = GT.field('Federal charitable deduction for the planned gift', ctl.deduction, 'The credit is 40% of the <i>deductible portion</i> of a planned gift — the present value of what the Library will eventually receive — not the whole amount you transfer. The <a href="' + o.urls.tools + 'tools/lifeincome.html" target="_blank" rel="noopener">life-income illustrator</a> estimates it.');
+      var dedField = GT.field('Federal charitable deduction for the planned gift', ctl.deduction, 'The credit is 40% of the <i>deductible portion</i> of a planned gift — the present value of what the Library will eventually receive — not the whole amount you transfer. The <a href="' + GT.toolUrl('lifeincome') + '" target="_blank" rel="noopener">life-income illustrator</a> estimates it.');
       var ndField = GT.field('Your North Dakota taxable income', ctl.ndIncome, 'North Dakota starts from federal taxable income. Used only to estimate how much of the credit you can use this year versus carry forward.');
       var rateField = GT.field('Your federal tax bracket', ctl.rate);
       var itemField = GT.field('Do you itemize federal deductions?', ctl.itemize);
@@ -644,7 +657,7 @@ window.TRPL_ORG = {
             GT.li('If the credit exceeds your North Dakota tax, carry the balance forward — up to ' + c.carryforwardYears + ' more years.'),
             GT.li('On your federal return, reduce the charitable deduction by the credit (your preparer will know the rule) — or use the SALT safe harbor if you have room under the cap.')
           ])),
-          h('div.actions', [GT.linkBtn('Give to the endowment', o.ndEndowment.giveUrl || o.urls.donate, 'primary'), GT.linkBtn('Stock gift calculator', o.urls.tools + 'tools/stock.html', 'secondary'), GT.linkBtn('ND Tax Commissioner: endowment credit', 'https://www.tax.nd.gov/income-tax-incentives/endowment-fund-contribution-tax-credit', 'secondary')]),
+          h('div.actions', [GT.linkBtn('Give to the endowment', o.ndEndowment.giveUrl || o.urls.donate, 'primary'), GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary'), GT.linkBtn('ND Tax Commissioner: endowment credit', 'https://www.tax.nd.gov/income-tax-incentives/endowment-fund-contribution-tax-credit', 'secondary')]),
           GT.advisorQuestions([
             'Does my gift qualify — is the fund a “qualified endowment” under N.D.C.C. § 57-38-01.21, and have I met the ' + money(c.minGift) + ' minimum this year?',
             'How much North Dakota tax will I owe this year and the next three, and should I size or split the gift to use the whole credit?',

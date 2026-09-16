@@ -23,6 +23,11 @@ window.TRPL_ORG = {
    * label CGAs as "not currently offered by the Foundation". */
   offersGiftAnnuities: false,
 
+  /* Double the Donation public plugin key (the trlibrary.com/matching-gifts
+   * page already runs this plugin). Set it here or pass data-dtd-key on the
+   * matching tool's placeholder to embed the employer search. */
+  doubleTheDonationKey: '',
+
   /* North Dakota Charitable Giving Tax Credit. Gifts qualify only when they go
    * to a "qualified endowment fund" — permanent, irrevocable, spending only
    * income/appreciation — held by an ND-incorporated 501(c)(3). Fill in the
@@ -48,6 +53,12 @@ window.TRPL_ORG = {
     benefactor: 'https://www.trlibrary.com/benefactor-societies',
     matching: 'https://www.trlibrary.com/matching-gifts',
     tools: 'https://givingtools.labs.trlibrary.com/',
+    /* Where the individual tool pages live. Cross-links between tools use
+     * toolBase + <tool name>, so when the tools are placed on trlibrary.com at
+     * /support/tools/<name> every link stays on the main site. The GitHub
+     * Pages site mirrors the same path structure. Override per embed with
+     * data-tool-base. */
+    toolBase: 'https://www.trlibrary.com/support/tools/',
     /* DonorPerfect online form for "I've included the Library in my plans".
      * Leave blank to fall back to a pre-filled email to contactEmail. */
     intentForm: ''

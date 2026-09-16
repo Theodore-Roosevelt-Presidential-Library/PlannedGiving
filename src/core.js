@@ -260,6 +260,7 @@
       h('p.fine', { html: 'Federal figures reflect tax year <strong>' + t.taxYear + '</strong> (last reviewed ' + t.lastReviewed + '). ' + t.lawNote + ' State and local taxes vary and are only partly reflected. ' + o.name + ' · ' + o.taxStatus + ' · EIN ' + o.ein + ' · <a href="' + o.urls.tools + '" target="_blank" rel="noopener">About these tools</a>' })
     ]);
   }
+  function toolUrl(name) { var b = ORG().urls.toolBase || ORG().urls.tools; return b.replace(/\/?$/, '/') + name; }
   function contactLine() {
     var o = ORG();
     var who = o.contactName ? o.contactName + ' · ' : '';
@@ -284,6 +285,7 @@
   function applyOverrides(opts) {
     var o = ORG();
     if (opts.intentFormUrl) o.urls.intentForm = opts.intentFormUrl;
+    if (opts.toolBase) o.urls.toolBase = opts.toolBase;
     if (opts.contactEmail) o.contactEmail = opts.contactEmail;
     if (opts.contactName) o.contactName = opts.contactName;
     if (opts.contactPhone) o.contactPhone = opts.contactPhone;
@@ -339,6 +341,6 @@
     field: field, moneyInput: moneyInput, numberInput: numberInput, percentInput: percentInput, select: select, radios: radios, checks: checks, checkbox: checkbox,
     FILING: FILING, BRACKETS: BRACKETS,
     stat: stat, bars: bars, callout: callout, section: section, list: list, li: li, button: button, linkBtn: linkBtn, copyButton: copyButton,
-    advisorQuestions: advisorQuestions, disclaimer: disclaimer, contactLine: contactLine, intentCTA: intentCTA
+    advisorQuestions: advisorQuestions, disclaimer: disclaimer, toolUrl: toolUrl, contactLine: contactLine, intentCTA: intentCTA
   });
 })();

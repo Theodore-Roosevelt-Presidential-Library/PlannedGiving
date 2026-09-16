@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planned Giving Tools — Giving Tools · Theodore Roosevelt Presidential Library</title>
+<meta name="robots" content="index,follow">
+<meta name="description" content="Planned Giving Tools. Free planned-giving and tax-smart giving tools from the Theodore Roosevelt Presidential Library Foundation.">
+<style>
+  @font-face{font-family:"Dharma Gothic E";font-weight:700;src:url(../../fonts/dharma_type-dharmagothice-bold.woff2) format("woff2");font-display:swap}
+  @font-face{font-family:"Clearface";font-weight:400;src:url(../../fonts/clearfacestd-regular.woff2) format("woff2");font-display:swap}
+  @font-face{font-family:"Clearface";font-weight:400;font-style:italic;src:url(../../fonts/clearfacestd-italic.woff2) format("woff2");font-display:swap}
+  @font-face{font-family:"Clearface";font-weight:700;src:url(../../fonts/clearfacestd-heavy.woff2) format("woff2");font-display:swap}
+  @font-face{font-family:"Frutiger";font-weight:400;src:url(../../fonts/frutigerltstd-regular.woff2) format("woff2");font-display:swap}
+  @font-face{font-family:"Frutiger";font-weight:700;src:url(../../fonts/frutigerltstd-bold.woff2) format("woff2");font-display:swap}
+  :root { --night:#092A4D; --forest:#1B4633; --bright:#8FC895; --sand:#D1CCBD; --orange:#E7805D; --orange-dark:#D07556; --ink:#25282A; --nav:#404040; --cream:#F0ECE3; --cream-light:#FAF8F4; }
+  html,body { margin:0; background:#fff; color:var(--ink); font-family:"Clearface", Georgia, serif; font-size:18px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px 60px; }
+  header.site { background: var(--nav); color:#fff; padding: 18px 0; }
+  header.site .wrap { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:0; flex-wrap:wrap; }
+  header.site a { color:#fff; text-decoration:none; }
+  .brand { font-family: "Dharma Gothic E", "Arial Narrow", sans-serif; text-transform: uppercase; letter-spacing:.02em; font-weight:700; font-size:26px; line-height:1; }
+  .brand small { display:block; font-family:"Clearface", Georgia, serif; text-transform:none; font-size:13px; letter-spacing:.02em; color:#fff; font-weight:400; margin-top:2px; }
+  nav.site a { margin-left: 22px; font-family: "Frutiger", Arial, sans-serif; font-weight:700; font-size:15px; }
+  nav.site a.cta { background: var(--orange); color: var(--ink); padding: 10px 18px; border-radius: 2px; }
+  h1 { font-family: "Dharma Gothic E", "Arial Narrow", sans-serif; text-transform: uppercase; font-size: clamp(48px, 8vw, 88px); line-height:.92; margin: 44px 0 14px; color: var(--ink); font-weight:700; }
+  .lede { font-size: 20px; max-width: 760px; margin: 0 0 34px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
+  .card { background:var(--cream-light); border:1px solid #E4DFD3; border-radius:4px; padding:22px; display:flex; flex-direction:column; gap:10px; }
+  .card h3 { margin:0; font-family: "Dharma Gothic E", "Arial Narrow", sans-serif; text-transform: uppercase; font-size:26px; line-height:1; color: var(--ink); font-weight:700; }
+  .card p { margin:0; font-size:16px; flex:1; }
+  .card .links { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+  .btn { display:inline-block; font-family: "Frutiger", Arial, sans-serif; font-weight:700; font-size:14px; padding:10px 16px; border-radius:2px; border:1px solid var(--orange-dark); color: var(--ink); text-decoration:none; background:#fff; }
+  .btn:hover { background: var(--orange-dark); }
+  .btn.primary { background: var(--orange); border-color: var(--orange); color:var(--ink); }
+  .btn.primary:hover { background: var(--orange-dark); border-color: var(--orange-dark); }
+  pre { background:var(--ink); color:#F3F1EA; padding:14px 16px; border-radius:4px; overflow:auto; font-size:13.5px; line-height:1.5; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  p code { background: var(--cream); padding: 1px 5px; border-radius: 2px; font-size: 15px; }
+  .note { background:var(--cream-light); border-left:4px solid var(--orange); padding:14px 18px; border-radius:0 4px 4px 0; margin: 24px 0; }
+  h2 { font-family: "Dharma Gothic E", "Arial Narrow", sans-serif; text-transform: uppercase; color: var(--ink); margin: 48px 0 12px; font-size:36px; line-height:1; font-weight:700; }
+  h3.snippet { font-family:"Dharma Gothic E", "Arial Narrow", sans-serif; text-transform:uppercase; color:var(--ink); margin:28px 0 6px; font-size:24px; line-height:1; }
+  footer { margin-top: 50px; font-family:"Frutiger", Arial, sans-serif; font-size: 13px; color:#4F5052; border-top:1px solid #E4DFD3; padding-top:18px; }
+  footer a { color: inherit; }
+  .embed-page { background:#fff; }
+  
+</style>
+</head>
+<body><header class="site"><div class="wrap">
+  <a href="https://givingtools.labs.trlibrary.com/" class="brand">Giving Tools<small>Theodore Roosevelt Presidential Library</small></a>
+  <nav class="site"><a href="https://www.trlibrary.com/support">Ways to give</a><a href="https://www.trlibrary.com/heritage-society">Heritage Society</a><a href="https://github.com/Theodore-Roosevelt-Presidential-Library/PlannedGiving">GitHub</a><a class="cta" href="https://form-renderer-app.donorperfect.io/give/theodore-roosevelt-presidential-library-foundation/donate-page">Donate</a></nav>
+</div></header><div class="wrap">
+<h1>Tools for tax-smart giving</h1>
+<p class="lede">Free, open-source calculators and guides that help supporters of the Theodore Roosevelt Presidential Library — and their advisors — find the smartest way to give. Every tool drops onto any web page with one line of JavaScript.</p>
+<div class="grid">
+<div class="card"><h3>Giving Navigator</h3><p>Seven questions that point a visitor to the right giving method, with reasons, links, and questions for their advisor. Built for the top of the Support page.</p><div class="links"><a class="btn primary" href="navigator/">Open tool</a><a class="btn" href="#embed-navigator">Embed code</a></div></div>
+<div class="card"><h3>North Dakota Charitable Giving Tax Credit</h3><p>North Dakota’s 40% state credit for endowment and planned gifts: credit size, how much a donor can use, the federal-deduction interplay, and net cost.</p><div class="links"><a class="btn primary" href="ndcredit/">Open tool</a><a class="btn" href="#embed-ndcredit">Embed code</a></div></div>
+<div class="card"><h3>IRA Qualified Charitable Distribution Calculator</h3><p>Eligibility check, RMD estimate, and a side-by-side of giving from an IRA versus withdrawing and giving cash.</p><div class="links"><a class="btn primary" href="qcd/">Open tool</a><a class="btn" href="#embed-qcd">Embed code</a></div></div>
+<div class="card"><h3>Appreciated Stock Gift Calculator</h3><p>Give shares or sell-then-give: capital gains avoided, deduction value, net cost, and transfer steps.</p><div class="links"><a class="btn primary" href="stock/">Open tool</a><a class="btn" href="#embed-stock">Embed code</a></div></div>
+<div class="card"><h3>Bunching & Standard Deduction Comparison</h3><p>Every-year giving versus bunching two or three years into one, with the new ½%-of-AGI floor built in.</p><div class="links"><a class="btn primary" href="bunching/">Open tool</a><a class="btn" href="#embed-bunching">Embed code</a></div></div>
+<div class="card"><h3>Donor-Advised Fund Grant Guide</h3><p>Sponsor-specific grant steps, a copyable grant recommendation, and a DAF-or-direct decision helper.</p><div class="links"><a class="btn primary" href="daf/">Open tool</a><a class="btn" href="#embed-daf">Embed code</a></div></div>
+<div class="card"><h3>Bequest Language Builder</h3><p>Builds sample will or trust language — percentage, residuary, amount, or asset — with the Foundation’s legal details.</p><div class="links"><a class="btn primary" href="bequest/">Open tool</a><a class="btn" href="#embed-bequest">Embed code</a></div></div>
+<div class="card"><h3>Beneficiary Designation Guide</h3><p>Account-by-account instructions for naming the Foundation as a beneficiary and which assets are best left to charity.</p><div class="links"><a class="btn primary" href="beneficiary/">Open tool</a><a class="btn" href="#embed-beneficiary">Embed code</a></div></div>
+<div class="card"><h3>Letter of Intent (Heritage Society)</h3><p>The “I’ve included the Library in my plans” form. Embeds a DonorPerfect form when configured; otherwise a pre-filled email.</p><div class="links"><a class="btn primary" href="intent/">Open tool</a><a class="btn" href="#embed-intent">Embed code</a></div></div>
+<div class="card"><h3>Estate Tax & Charitable Bequest Estimator</h3><p>Federal estate tax exposure, how a charitable bequest changes it, and a flag for the 18 states with their own death taxes.</p><div class="links"><a class="btn primary" href="estate/">Open tool</a><a class="btn" href="#embed-estate">Embed code</a></div></div>
+<div class="card"><h3>Life-Income Gift Illustrator</h3><p>Educational illustrations of a gift annuity, unitrust, and annuity trust using ACGA rates and the current §7520 rate.</p><div class="links"><a class="btn primary" href="lifeincome/">Open tool</a><a class="btn" href="#embed-lifeincome">Embed code</a></div></div>
+<div class="card"><h3>Employer Matching Gift Impact</h3><p>What a gift becomes with an employer match, and how to claim it.</p><div class="links"><a class="btn primary" href="matching/">Open tool</a><a class="btn" href="#embed-matching">Embed code</a></div></div>
+<div class="card"><h3>Monthly Giving Calculator</h3><p>A slider that turns a monthly amount into yearly and multi-year impact and links to the monthly giving form.</p><div class="links"><a class="btn primary" href="monthly/">Open tool</a><a class="btn" href="#embed-monthly">Embed code</a></div></div>
+</div>
+
+<h2>How to embed</h2>
+<p>Each tool is a single JavaScript file that carries its own styles, the current tax figures, and the Foundation’s details. Paste one snippet where you want the tool to appear. Several tools can share a page.</p>
+<pre><code>&lt;div data-trpl-tool="navigator"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/navigator.js" async&gt;&lt;/script&gt;</code></pre>
+<p>Options go on the <code>div</code> as data attributes: <code>data-theme="dark"</code>, <code>data-accent="#1B4532"</code>, <code>data-hide-header="true"</code>, <code>data-intent-form-url="https://…"</code> (DonorPerfect intent form), <code>data-contact-email</code>, <code>data-contact-name</code>, <code>data-contact-phone</code>. Full reference in <a href="https://github.com/Theodore-Roosevelt-Presidential-Library/PlannedGiving/blob/main/docs/EMBED.md">docs/EMBED.md</a>.</p>
+<div class="note"><b>Tax figures are reviewed every year.</b> All rates and limits live in one file (<code>src/tax-data.js</code>) stamped with the tax year and review date, and every tool prints that stamp in its footer. A scheduled reminder opens a review issue each November when the IRS publishes the next year’s figures. See <a href="https://github.com/Theodore-Roosevelt-Presidential-Library/PlannedGiving/blob/main/docs/TAX-REVIEW.md">docs/TAX-REVIEW.md</a>.</div>
+
+<h2>Embed snippets</h2>
+<h3 class="snippet" id="embed-navigator">Giving Navigator</h3>
+<pre><code>&lt;div data-trpl-tool="navigator"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/navigator.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/navigator/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-ndcredit">North Dakota Charitable Giving Tax Credit</h3>
+<pre><code>&lt;div data-trpl-tool="ndcredit"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/ndcredit.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/ndcredit/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-qcd">IRA Qualified Charitable Distribution Calculator</h3>
+<pre><code>&lt;div data-trpl-tool="qcd"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/qcd.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/qcd/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-stock">Appreciated Stock Gift Calculator</h3>
+<pre><code>&lt;div data-trpl-tool="stock"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/stock.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/stock/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-bunching">Bunching & Standard Deduction Comparison</h3>
+<pre><code>&lt;div data-trpl-tool="bunching"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/bunching.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/bunching/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-daf">Donor-Advised Fund Grant Guide</h3>
+<pre><code>&lt;div data-trpl-tool="daf"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/daf.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/daf/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-bequest">Bequest Language Builder</h3>
+<pre><code>&lt;div data-trpl-tool="bequest"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/bequest.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/bequest/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-beneficiary">Beneficiary Designation Guide</h3>
+<pre><code>&lt;div data-trpl-tool="beneficiary"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/beneficiary.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/beneficiary/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-intent">Letter of Intent (Heritage Society)</h3>
+<pre><code>&lt;div data-trpl-tool="intent"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/intent.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/intent/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-estate">Estate Tax & Charitable Bequest Estimator</h3>
+<pre><code>&lt;div data-trpl-tool="estate"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/estate.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/estate/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-lifeincome">Life-Income Gift Illustrator</h3>
+<pre><code>&lt;div data-trpl-tool="lifeincome"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/lifeincome.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/lifeincome/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-matching">Employer Matching Gift Impact</h3>
+<pre><code>&lt;div data-trpl-tool="matching"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/matching.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/matching/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+<h3 class="snippet" id="embed-monthly">Monthly Giving Calculator</h3>
+<pre><code>&lt;div data-trpl-tool="monthly"&gt;&lt;/div&gt;
+&lt;script src="https://givingtools.labs.trlibrary.com/dist/monthly.js" async&gt;&lt;/script&gt;</code></pre>
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="https://givingtools.labs.trlibrary.com/support/tools/monthly/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>
+
+<h2>Try them together</h2>
+<p>A live demo of the Navigator, the way it would sit at the top of the Support page:</p>
+<div class="tool-page"><div data-trpl-tool="navigator" data-tool-base="./"></div></div>
+<script src="../../dist/navigator.js" async></script>
+<footer><p>Theodore Roosevelt Presidential Library Foundation · 501(c)(3) · EIN 47-1324043 · 1401 East Calgary Ave, Suite 210, Bismarck, ND 58503 · <a href="mailto:giving@trlibrary.com">giving@trlibrary.com</a></p>
+<p>The Foundation is not a tax, legal, or financial advisor. These tools provide general education and estimates only; please consult your own advisors. Federal figures reflect tax year 2026; reviewed annually. Open source under the MIT license.</p></footer>
+</div></body></html>

@@ -27,7 +27,7 @@ const server = http.createServer((req, res) => {
   let failed = 0;
   for (const name of tools) {
     errors.length = 0;
-    await page.goto('http://localhost:8089/tools/' + name + '-embed.html', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:8089/support/tools/' + name + '/embed.html', { waitUntil: 'networkidle' });
     await page.waitForTimeout(300);
     const mounted = await page.$('.trpl-gt[data-tool="' + name + '"] .trpl-body > *');
     const text = await page.evaluate(() => document.body.innerText);

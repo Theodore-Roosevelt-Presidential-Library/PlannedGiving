@@ -89,7 +89,7 @@ let index = head('Planned Giving Tools') + siteHeader + `<div class="wrap">
 <h1>Tools for tax-smart giving</h1>
 <p class="lede">Free, open-source calculators and guides that help supporters of the Theodore Roosevelt Presidential Library — and their advisors — find the smartest way to give. Every tool drops onto any web page with one line of JavaScript.</p>
 <div class="grid">
-${tools.map(t => `<div class="card"><h3>${t.title}</h3><p>${BLURB[t.name] || ''}</p><div class="links"><a class="btn primary" href="tools/${t.name}.html">Open tool</a><a class="btn" href="#embed-${t.name}">Embed code</a></div></div>`).join('\n')}
+${tools.map(t => `<div class="card"><h3>${t.title}</h3><p>${BLURB[t.name] || ''}</p><div class="links"><a class="btn primary" href="support/tools/${t.name}/">Open tool</a><a class="btn" href="#embed-${t.name}">Embed code</a></div></div>`).join('\n')}
 </div>
 
 <h2>How to embed</h2>
@@ -103,28 +103,39 @@ ${tools.map(t => `<div class="card"><h3>${t.title}</h3><p>${BLURB[t.name] || ''}
 ${tools.map(t => `<h3 class="snippet" id="embed-${t.name}">${t.title}</h3>
 <pre><code>&lt;div data-trpl-tool="${t.name}"&gt;&lt;/div&gt;
 &lt;script src="${BASE}dist/${t.name}.js" async&gt;&lt;/script&gt;</code></pre>
-<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="${BASE}tools/${t.name}.html" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>`).join('\n')}
+<p style="font-size:15px;color:#4F5052">Or as an iframe: <code>&lt;iframe src="${BASE}support/tools/${t.name}/embed" style="width:100%;height:900px;border:0"&gt;&lt;/iframe&gt;</code></p>`).join('\n')}
 
 <h2>Try them together</h2>
 <p>A live demo of the Navigator, the way it would sit at the top of the Support page:</p>
-<div class="tool-page"><div data-trpl-tool="navigator"></div></div>
+<div class="tool-page"><div data-trpl-tool="navigator" data-tool-base="support/tools/"></div></div>
 <script src="dist/navigator.js" async></script>
 ${footer}
 </div></body></html>`;
 fs.writeFileSync(path.join(ROOT, 'index.html'), index);
 
-/* ---------- tools/<name>.html ---------- */
-fs.mkdirSync(path.join(ROOT, 'tools'), { recursive: true });
+/* ---------- support/tools/<name>/index.html ----------
+ * Mirrors the URL structure planned for trlibrary.com (/support/tools/<name>),
+ * so the same path works on either host. Cross-links inside the tools use a
+ * relative tool base here; on trlibrary.com the config default applies. */
+const TOOLS_DIR = path.join(ROOT, 'support', 'tools');
+fs.mkdirSync(TOOLS_DIR, { recursive: true });
 for (const t of tools) {
-  const page = head(t.title, '', '../fonts') + siteHeader + `<div class="wrap tool-page">
+  const dir = path.join(TOOLS_DIR, t.name);
+  fs.mkdirSync(dir, { recursive: true });
+  const page = head(t.title, '', '../../../fonts') + siteHeader + `<div class="wrap tool-page">
 <p style="margin:26px 0 12px"><a href="../">← All giving tools</a></p>
-<div data-trpl-tool="${t.name}"></div>
-<script src="../dist/${t.name}.js" async></script>
+<div data-trpl-tool="${t.name}" data-tool-base="../"></div>
+<script src="../../../dist/${t.name}.js" async></script>
 <p style="font-size:15px;color:#4F5052;margin-top:22px">Embed this tool on your own page: <code>&lt;div data-trpl-tool="${t.name}"&gt;&lt;/div&gt;&lt;script src="${BASE}dist/${t.name}.js" async&gt;&lt;/script&gt;</code></p>
 ${footer}
 </div></body></html>`;
-  fs.writeFileSync(path.join(ROOT, 'tools', t.name + '.html'), page);
-  // bare embed page (no site chrome) — ideal for iframes
-  fs.writeFileSync(path.join(ROOT, 'tools', t.name + '-embed.html'), head(t.title, 'body{background:#fff} .wrap{padding:0}', '../fonts') .replace('<body>', '<body class="embed-page">') + `<div class="wrap tool-page"><div data-trpl-tool="${t.name}"></div><script src="../dist/${t.name}.js" async></script></div></body></html>`);
+  fs.writeFileSync(path.join(dir, 'index.html'), page);
+  // bare embed page (no site chrome) — ideal for iframes: /support/tools/<name>/embed
+  fs.writeFileSync(path.join(dir, 'embed.html'), head(t.title, 'body{background:#fff} .wrap{padding:0}', '../../../fonts').replace('<body>', '<body class="embed-page">') + `<div class="wrap tool-page"><div data-trpl-tool="${t.name}" data-tool-base="../"></div><script src="../../../dist/${t.name}.js" async></script></div></body></html>`);
 }
-console.log('Wrote index.html and ' + tools.length * 2 + ' tool pages');
+// /support/tools/ gallery = same as the home page, one directory deeper
+fs.writeFileSync(path.join(TOOLS_DIR, 'index.html'), index.replace(/href="support\/tools\//g, 'href="').replace(/src="dist\//g, 'src="../../dist/').replace(/url\(fonts\//g, 'url(../../fonts/').replace('data-tool-base="support/tools/"', 'data-tool-base="./"'));
+// /support/ → tools gallery
+fs.mkdirSync(path.join(ROOT, 'support'), { recursive: true });
+fs.writeFileSync(path.join(ROOT, 'support', 'index.html'), '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=tools/"><title>Giving Tools</title><a href="tools/">Giving tools</a>');
+console.log('Wrote index.html, support/tools/index.html and ' + tools.length * 2 + ' tool pages under support/tools/<name>/');

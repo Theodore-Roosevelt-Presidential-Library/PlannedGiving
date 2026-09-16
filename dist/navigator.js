@@ -1,4 +1,4 @@
-/* TRPL Giving Tools v1.1.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
+/* TRPL Giving Tools v1.2.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
 /* ============================================================================
  * TRPL Giving Tools — TAX DATA (single source of truth)
  * ----------------------------------------------------------------------------
@@ -145,6 +145,11 @@ window.TRPL_ORG = {
    * label CGAs as "not currently offered by the Foundation". */
   offersGiftAnnuities: false,
 
+  /* Double the Donation public plugin key (the trlibrary.com/matching-gifts
+   * page already runs this plugin). Set it here or pass data-dtd-key on the
+   * matching tool's placeholder to embed the employer search. */
+  doubleTheDonationKey: '',
+
   /* North Dakota Charitable Giving Tax Credit. Gifts qualify only when they go
    * to a "qualified endowment fund" — permanent, irrevocable, spending only
    * income/appreciation — held by an ND-incorporated 501(c)(3). Fill in the
@@ -170,6 +175,12 @@ window.TRPL_ORG = {
     benefactor: 'https://www.trlibrary.com/benefactor-societies',
     matching: 'https://www.trlibrary.com/matching-gifts',
     tools: 'https://givingtools.labs.trlibrary.com/',
+    /* Where the individual tool pages live. Cross-links between tools use
+     * toolBase + <tool name>, so when the tools are placed on trlibrary.com at
+     * /support/tools/<name> every link stays on the main site. The GitHub
+     * Pages site mirrors the same path structure. Override per embed with
+     * data-tool-base. */
+    toolBase: 'https://www.trlibrary.com/support/tools/',
     /* DonorPerfect online form for "I've included the Library in my plans".
      * Leave blank to fall back to a pre-filled email to contactEmail. */
     intentForm: ''
@@ -190,10 +201,10 @@ window.TRPL_ORG = {
  * copy. No dependencies, no build-time framework, ES2017.
  * ========================================================================== */
 (function () {
-  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.1.0') return;
+  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.2.0') return;
 
   var GT = window.TRPLGivingTools = window.TRPLGivingTools || {};
-  GT.version = '1.1.0';
+  GT.version = '1.2.0';
   GT.registry = GT.registry || {};
   GT.mounted = GT.mounted || [];
 
@@ -446,6 +457,7 @@ window.TRPL_ORG = {
       h('p.fine', { html: 'Federal figures reflect tax year <strong>' + t.taxYear + '</strong> (last reviewed ' + t.lastReviewed + '). ' + t.lawNote + ' State and local taxes vary and are only partly reflected. ' + o.name + ' · ' + o.taxStatus + ' · EIN ' + o.ein + ' · <a href="' + o.urls.tools + '" target="_blank" rel="noopener">About these tools</a>' })
     ]);
   }
+  function toolUrl(name) { var b = ORG().urls.toolBase || ORG().urls.tools; return b.replace(/\/?$/, '/') + name; }
   function contactLine() {
     var o = ORG();
     var who = o.contactName ? o.contactName + ' · ' : '';
@@ -470,6 +482,7 @@ window.TRPL_ORG = {
   function applyOverrides(opts) {
     var o = ORG();
     if (opts.intentFormUrl) o.urls.intentForm = opts.intentFormUrl;
+    if (opts.toolBase) o.urls.toolBase = opts.toolBase;
     if (opts.contactEmail) o.contactEmail = opts.contactEmail;
     if (opts.contactName) o.contactName = opts.contactName;
     if (opts.contactPhone) o.contactPhone = opts.contactPhone;
@@ -525,7 +538,7 @@ window.TRPL_ORG = {
     field: field, moneyInput: moneyInput, numberInput: numberInput, percentInput: percentInput, select: select, radios: radios, checks: checks, checkbox: checkbox,
     FILING: FILING, BRACKETS: BRACKETS,
     stat: stat, bars: bars, callout: callout, section: section, list: list, li: li, button: button, linkBtn: linkBtn, copyButton: copyButton,
-    advisorQuestions: advisorQuestions, disclaimer: disclaimer, contactLine: contactLine, intentCTA: intentCTA
+    advisorQuestions: advisorQuestions, disclaimer: disclaimer, toolUrl: toolUrl, contactLine: contactLine, intentCTA: intentCTA
   });
 })();
 
@@ -573,14 +586,14 @@ window.TRPL_ORG = {
       recs.push({ score: 100, title: 'Give directly from your IRA (Qualified Charitable Distribution)', tag: 'Strong fit',
         why: 'At 70½ or older you can send up to ' + lim + ' a year from an IRA straight to the Library. The amount never shows up in your taxable income, which beats a deduction for most people — and if you are ' + t.qcd.rmdAge + ' or older it can count toward your required minimum distribution.',
         next: 'Ask your IRA custodian for a “qualified charitable distribution” payable to ' + o.name + ' (EIN ' + o.ein + ').',
-        links: [['How to give from your IRA', u.ira], ['Estimate your QCD savings', tools + 'tools/qcd.html']] });
+        links: [['How to give from your IRA', u.ira], ['Estimate your QCD savings', GT.toolUrl('qcd')]] });
       qs.push('Should part or all of my required minimum distribution go to charity as a QCD this year?');
       qs.push('Would keeping this out of my adjusted gross income help with Medicare premiums or the taxation of my Social Security?');
     } else if (has('ira') && a.age !== '70') {
       recs.push({ score: 55, title: 'Name the Library as a beneficiary of your retirement account', tag: 'Tax-smart for later',
         why: 'Retirement accounts are often the most heavily taxed asset heirs can inherit. Leaving a percentage to the Library costs your family less than leaving them the same dollars in other assets — and it takes minutes on a beneficiary form, no attorney needed.',
         next: 'Log in to your plan or IRA account and add ' + o.name + ' (EIN ' + o.ein + ') as a primary or contingent beneficiary for a percentage of your choice.',
-        links: [['Beneficiary designation guide', tools + 'tools/beneficiary.html'], ['Heritage Society', u.heritage]] });
+        links: [['Beneficiary designation guide', GT.toolUrl('beneficiary')], ['Heritage Society', u.heritage]] });
       if (a.age === 'u59' && a.goal === 'now') qs.push('Withdrawing from a retirement account before 59½ usually triggers a 10% penalty. Is there a better asset to give from now?');
       qs.push('Which of my assets are best left to charity and which to family, given how each is taxed when inherited?');
     }
@@ -589,7 +602,7 @@ window.TRPL_ORG = {
       recs.push({ score: 90, title: 'Give appreciated stock or fund shares', tag: 'Strong fit',
         why: 'When you give shares held more than a year, you generally avoid capital gains tax on the growth and may deduct the full market value if you itemize. The Library receives more, and it costs you less than selling and giving cash.',
         next: 'Ask your broker to transfer shares to the Library’s brokerage account — the transfer instructions are on the stock gift page.',
-        links: [['Stock gift instructions', u.stock], ['Compare giving shares vs. cash', tools + 'tools/stock.html']] });
+        links: [['Stock gift instructions', u.stock], ['Compare giving shares vs. cash', GT.toolUrl('stock')]] });
       qs.push('Which of my holdings has the largest unrealized gain and has been held longer than a year?');
     }
 
@@ -597,7 +610,7 @@ window.TRPL_ORG = {
       recs.push({ score: 85, title: 'Recommend a grant from your donor-advised fund', tag: 'Easy today',
         why: 'You already took the deduction when you funded the DAF, so a grant to the Library is the simplest way to give. Most sponsors let you set it up online in a few minutes.',
         next: 'Log in to your fund sponsor and recommend a grant to ' + o.name + ' (EIN ' + o.ein + ').',
-        links: [['DAF grant guide', tools + 'tools/daf.html'], ['Donor-advised funds', u.daf]] });
+        links: [['DAF grant guide', GT.toolUrl('daf')], ['Donor-advised funds', u.daf]] });
       qs.push('Should I name the Library as a successor or beneficiary of my donor-advised fund?');
     }
 
@@ -605,14 +618,14 @@ window.TRPL_ORG = {
       recs.push({ score: a.goal === 'later' ? 95 : 60, title: 'Include the Library in your will or trust', tag: a.goal === 'later' ? 'Strong fit' : 'Worth considering',
         why: 'A gift in your will costs nothing today, can be a fixed amount or a percentage, and can be changed at any time. It is how most legacy gifts are made, and it qualifies you for the ' + o.legacySociety + '.',
         next: 'Share the sample language with your attorney, or add it when you next update your plan. Then let us know so we can thank you.',
-        links: [['Write your bequest language', tools + 'tools/bequest.html'], ['Heritage Society', u.heritage]] });
+        links: [['Write your bequest language', GT.toolUrl('bequest')], ['Heritage Society', u.heritage]] });
       qs.push('Would a percentage of my estate or a specific dollar amount make more sense for my family?');
       qs.push('Does my current will or trust reflect the charities I care about today?');
       if (has('estate') || a.size === 'xl') {
         recs.push({ score: 50, title: 'See how a charitable bequest affects estate tax', tag: 'Planning aid',
           why: 'Federal estate tax applies only above ' + money(t.estate.exemption) + ' per person in ' + t.taxYear + ', but a dozen states tax much smaller estates. Charitable bequests are fully deductible from the taxable estate.',
           next: 'Run a rough estimate, then bring it to your estate attorney.',
-          links: [['Estate tax estimator', tools + 'tools/estate.html']] });
+          links: [['Estate tax estimator', GT.toolUrl('estate')]] });
       }
     }
 
@@ -620,7 +633,7 @@ window.TRPL_ORG = {
       recs.push({ score: 92, title: 'Explore a gift that pays you income', tag: 'Talk with an advisor',
         why: 'Charitable gift annuities and charitable remainder trusts let you make a gift now, receive payments for life or a term of years, and take a partial deduction. ' + (o.offersGiftAnnuities ? 'The Library can issue gift annuities directly.' : 'The Library does not currently issue gift annuities itself, but a community foundation or your advisor can set one up that ultimately benefits the Library.'),
         next: 'Use the illustrator to see ballpark numbers, then ask your advisor which vehicle fits.',
-        links: [['Life-income gift illustrator', tools + 'tools/lifeincome.html']] });
+        links: [['Life-income gift illustrator', GT.toolUrl('lifeincome')]] });
       qs.push('Is a charitable gift annuity or a charitable remainder trust a better fit for my income needs and my heirs?');
       qs.push('If I funded a life-income gift with appreciated stock, how would the capital gains be treated?');
     }
@@ -633,12 +646,12 @@ window.TRPL_ORG = {
       recs.push({ score: a.size === 's' ? 80 : 45, title: 'Make a gift online today', tag: 'Simple',
         why: cashWhy + (a.size === 's' ? ' Monthly giving turns a modest amount into steady, year-round support.' : ''),
         next: 'Give once or set up a monthly gift in about a minute.',
-        links: [['Give now', u.donate], ['Monthly giving calculator', tools + 'tools/monthly.html']] });
+        links: [['Give now', u.donate], ['Monthly giving calculator', GT.toolUrl('monthly')]] });
       if (big && a.itemize !== 'yes') {
         recs.push({ score: 70, title: 'Consider “bunching” several years of giving', tag: 'Tax idea',
           why: 'If you normally take the standard deduction, combining two or three years of gifts into one year — often through a donor-advised fund — can lift you over the itemizing threshold and save real money, while you keep supporting the Library every year.',
           next: 'Compare an every-year plan with a bunched plan.',
-          links: [['Bunching comparison', tools + 'tools/bunching.html']] });
+          links: [['Bunching comparison', GT.toolUrl('bunching')]] });
         qs.push('Would bunching my charitable gifts into one tax year let me itemize, and is a donor-advised fund the right way to do it?');
       }
       if (a.itemize === 'yes' || a.itemize === 'unsure') qs.push('Am I better off itemizing this year, and how does the ½%-of-AGI floor on charitable deductions affect me?');
@@ -657,7 +670,7 @@ window.TRPL_ORG = {
       recs.push({ score: a.nd === 'yes' ? 88 : 58, title: 'Claim North Dakota’s 40% charitable giving tax credit', tag: a.nd === 'yes' ? 'Strong fit' : 'If you pay ND tax',
         why: 'Gifts of ' + money(nd.minGift) + ' or more to the Library’s endowment — and planned gifts like gift annuities or remainder trusts — earn a North Dakota income tax credit of ' + pctFmt(nd.rate) + ' of the gift, up to ' + money(nd.maxIndividual) + ' per person or ' + money(nd.maxJoint) + ' for couples filing jointly, with a three-year carryforward. Combined with federal benefits, a large gift can cost less than half its face value.',
         next: 'Run the numbers, then ask us how to designate your gift to the endowment so it qualifies.',
-        links: [['ND tax credit calculator', tools + 'tools/ndcredit.html'], ['Email the giving team', 'mailto:' + o.contactEmail]] });
+        links: [['ND tax credit calculator', GT.toolUrl('ndcredit')], ['Email the giving team', 'mailto:' + o.contactEmail]] });
       qs.push('Do I have enough North Dakota tax liability over the next four years to use the full 40% credit, and how does the credit affect my federal deduction?');
     }
 
@@ -665,7 +678,7 @@ window.TRPL_ORG = {
       recs.push({ score: 40, title: 'Double your gift with an employer match', tag: 'Free money',
         why: 'Many employers match gifts to nonprofits like the Library — sometimes 2:1 — and some match retirees’ gifts too.',
         next: 'Check your HR portal or the matching gifts page and submit the request after you give.',
-        links: [['Matching gifts', u.matching], ['Matching gift impact', tools + 'tools/matching.html']] });
+        links: [['Matching gifts', u.matching], ['Matching gift impact', GT.toolUrl('matching')]] });
     }
 
     if (!recs.length) {

@@ -1,4 +1,4 @@
-/* TRPL Giving Tools v1.1.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
+/* TRPL Giving Tools v1.2.0 — https://givingtools.labs.trlibrary.com — built 2026-09-16 */
 /* ============================================================================
  * TRPL Giving Tools — TAX DATA (single source of truth)
  * ----------------------------------------------------------------------------
@@ -145,6 +145,11 @@ window.TRPL_ORG = {
    * label CGAs as "not currently offered by the Foundation". */
   offersGiftAnnuities: false,
 
+  /* Double the Donation public plugin key (the trlibrary.com/matching-gifts
+   * page already runs this plugin). Set it here or pass data-dtd-key on the
+   * matching tool's placeholder to embed the employer search. */
+  doubleTheDonationKey: '',
+
   /* North Dakota Charitable Giving Tax Credit. Gifts qualify only when they go
    * to a "qualified endowment fund" — permanent, irrevocable, spending only
    * income/appreciation — held by an ND-incorporated 501(c)(3). Fill in the
@@ -170,6 +175,12 @@ window.TRPL_ORG = {
     benefactor: 'https://www.trlibrary.com/benefactor-societies',
     matching: 'https://www.trlibrary.com/matching-gifts',
     tools: 'https://givingtools.labs.trlibrary.com/',
+    /* Where the individual tool pages live. Cross-links between tools use
+     * toolBase + <tool name>, so when the tools are placed on trlibrary.com at
+     * /support/tools/<name> every link stays on the main site. The GitHub
+     * Pages site mirrors the same path structure. Override per embed with
+     * data-tool-base. */
+    toolBase: 'https://www.trlibrary.com/support/tools/',
     /* DonorPerfect online form for "I've included the Library in my plans".
      * Leave blank to fall back to a pre-filled email to contactEmail. */
     intentForm: ''
@@ -190,10 +201,10 @@ window.TRPL_ORG = {
  * copy. No dependencies, no build-time framework, ES2017.
  * ========================================================================== */
 (function () {
-  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.1.0') return;
+  if (window.TRPLGivingTools && window.TRPLGivingTools.version === '1.2.0') return;
 
   var GT = window.TRPLGivingTools = window.TRPLGivingTools || {};
-  GT.version = '1.1.0';
+  GT.version = '1.2.0';
   GT.registry = GT.registry || {};
   GT.mounted = GT.mounted || [];
 
@@ -446,6 +457,7 @@ window.TRPL_ORG = {
       h('p.fine', { html: 'Federal figures reflect tax year <strong>' + t.taxYear + '</strong> (last reviewed ' + t.lastReviewed + '). ' + t.lawNote + ' State and local taxes vary and are only partly reflected. ' + o.name + ' · ' + o.taxStatus + ' · EIN ' + o.ein + ' · <a href="' + o.urls.tools + '" target="_blank" rel="noopener">About these tools</a>' })
     ]);
   }
+  function toolUrl(name) { var b = ORG().urls.toolBase || ORG().urls.tools; return b.replace(/\/?$/, '/') + name; }
   function contactLine() {
     var o = ORG();
     var who = o.contactName ? o.contactName + ' · ' : '';
@@ -470,6 +482,7 @@ window.TRPL_ORG = {
   function applyOverrides(opts) {
     var o = ORG();
     if (opts.intentFormUrl) o.urls.intentForm = opts.intentFormUrl;
+    if (opts.toolBase) o.urls.toolBase = opts.toolBase;
     if (opts.contactEmail) o.contactEmail = opts.contactEmail;
     if (opts.contactName) o.contactName = opts.contactName;
     if (opts.contactPhone) o.contactPhone = opts.contactPhone;
@@ -525,7 +538,7 @@ window.TRPL_ORG = {
     field: field, moneyInput: moneyInput, numberInput: numberInput, percentInput: percentInput, select: select, radios: radios, checks: checks, checkbox: checkbox,
     FILING: FILING, BRACKETS: BRACKETS,
     stat: stat, bars: bars, callout: callout, section: section, list: list, li: li, button: button, linkBtn: linkBtn, copyButton: copyButton,
-    advisorQuestions: advisorQuestions, disclaimer: disclaimer, contactLine: contactLine, intentCTA: intentCTA
+    advisorQuestions: advisorQuestions, disclaimer: disclaimer, toolUrl: toolUrl, contactLine: contactLine, intentCTA: intentCTA
   });
 })();
 
@@ -572,7 +585,7 @@ window.TRPL_ORG = {
           var wait = Math.ceil(t.qcd.minAge - age);
           GT.append(out, [
             GT.callout('warn', '<p><b>Not eligible yet.</b> QCDs are available once you reach 70½ — about ' + wait + ' year' + (wait === 1 ? '' : 's') + ' from now.</p><p>In the meantime, two ideas: naming the Library as a <b>beneficiary of the IRA</b> is one of the most tax-efficient legacy gifts available, and if you own <b>appreciated stock</b>, giving shares is usually better than giving cash.</p>'),
-            h('div.actions', [GT.linkBtn('Beneficiary designation guide', o.urls.tools + 'tools/beneficiary.html', 'primary'), GT.linkBtn('Stock gift calculator', o.urls.tools + 'tools/stock.html', 'secondary')]),
+            h('div.actions', [GT.linkBtn('Beneficiary designation guide', GT.toolUrl('beneficiary'), 'primary'), GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary')]),
             GT.advisorQuestions(['Which of my accounts should name a charity as beneficiary, and which should go to family?', 'When I reach 70½, how should QCDs fit into my withdrawal plan?'])
           ]);
           return;

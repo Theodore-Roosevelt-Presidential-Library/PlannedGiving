@@ -31,7 +31,19 @@ Every tool is one `<script>` tag. No framework, no build step on the host page, 
 <script src="https://givingtools.labs.trlibrary.com/dist/navigator.js" async></script>
 ```
 
-Options are data attributes on the `div` — see [docs/EMBED.md](docs/EMBED.md). Each tool also has a standalone page (`tools/<name>.html`) and a chrome-free page for iframes (`tools/<name>-embed.html`).
+Options are data attributes on the `div` — see [docs/EMBED.md](docs/EMBED.md).
+
+## URL structure (mirrors trlibrary.com)
+
+Tools cross-link to one another (the Navigator points to calculators, the ND credit tool points to the life-income illustrator, and so on). Those links are built from one base URL, `urls.toolBase` in `src/config.js`, which defaults to **`https://www.trlibrary.com/support/tools/`**. Each tool lives at `<toolBase><name>`:
+
+| Tool | trlibrary.com page | Pages mirror |
+|---|---|---|
+| navigator | `/support/tools/navigator` | `support/tools/navigator/` |
+| ndcredit | `/support/tools/ndcredit` | `support/tools/ndcredit/` |
+| qcd, stock, bunching, daf, bequest, beneficiary, intent, estate, lifeincome, matching, monthly | `/support/tools/<name>` | `support/tools/<name>/` |
+
+This repo publishes the same structure, so `givingtools.labs.trlibrary.com/support/tools/qcd` and `www.trlibrary.com/support/tools/qcd` are the same page on two hosts. Pages on this site pass `data-tool-base="../"` so links stay local; embeds on trlibrary.com use the config default and never leave the main site. Each tool also has a chrome-free page for iframes at `support/tools/<name>/embed`. See [docs/DRUPAL.md](docs/DRUPAL.md) for the Drupal recipe.
 
 ## Repo layout
 
@@ -42,10 +54,11 @@ src/core.js         ← shared runtime (DOM helpers, form controls, tax helpers,
 src/styles.css      ← scoped styles, inlined into every bundle at build time
 src/tools/*.js      ← one file per tool
 build.js            ← concatenates → dist/<tool>.js (+ all.js, manifest.json)
-gen-pages.js        ← writes index.html and tools/*.html
+gen-pages.js        ← writes index.html and support/tools/<name>/{index,embed}.html
 test/render.js      ← headless render of every tool, fails on console errors, screenshots
 test/run.js         ← unit checks on the calculator math
-docs/               ← EMBED.md, TAX-REVIEW.md
+docs/               ← EMBED.md, DRUPAL.md, TAX-REVIEW.md
+fonts/              ← the Library's licensed webfonts (Dharma Gothic E, Clearface, Frutiger)
 ```
 
 ## Develop

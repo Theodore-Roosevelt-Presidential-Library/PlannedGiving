@@ -1,85 +1,85 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "taxYear": "2026",
-  "built": "2026-09-16T15:44:26.164Z",
+  "built": "2026-09-16T15:55:11.881Z",
   "tools": [
     {
       "name": "beneficiary",
       "title": "Beneficiary Designation Guide",
       "file": "dist/beneficiary.js",
-      "bytes": 56408
+      "bytes": 57236
     },
     {
       "name": "bequest",
       "title": "Bequest Language Builder",
       "file": "dist/bequest.js",
-      "bytes": 57503
+      "bytes": 58331
     },
     {
       "name": "bunching",
       "title": "Bunching & Standard Deduction Comparison",
       "file": "dist/bunching.js",
-      "bytes": 57130
+      "bytes": 57944
     },
     {
       "name": "daf",
       "title": "Donor-Advised Fund Grant Guide",
       "file": "dist/daf.js",
-      "bytes": 57820
+      "bytes": 58606
     },
     {
       "name": "estate",
       "title": "Estate Tax & Charitable Bequest Estimator",
       "file": "dist/estate.js",
-      "bytes": 56777
+      "bytes": 57577
     },
     {
       "name": "intent",
       "title": "Letter of Intent (Heritage Society)",
       "file": "dist/intent.js",
-      "bytes": 53248
+      "bytes": 54076
     },
     {
       "name": "lifeincome",
       "title": "Life-Income Gift Illustrator",
       "file": "dist/lifeincome.js",
-      "bytes": 61274
+      "bytes": 62088
     },
     {
       "name": "matching",
       "title": "Employer Matching Gift Impact",
       "file": "dist/matching.js",
-      "bytes": 53384
+      "bytes": 55219
     },
     {
       "name": "monthly",
       "title": "Monthly Giving Calculator",
       "file": "dist/monthly.js",
-      "bytes": 52442
+      "bytes": 53270
     },
     {
       "name": "navigator",
       "title": "Giving Navigator",
       "file": "dist/navigator.js",
-      "bytes": 66309
+      "bytes": 67060
     },
     {
       "name": "ndcredit",
       "title": "North Dakota Charitable Giving Tax Credit",
       "file": "dist/ndcredit.js",
-      "bytes": 63678
+      "bytes": 64483
     },
     {
       "name": "qcd",
       "title": "IRA Qualified Charitable Distribution Calculator",
       "file": "dist/qcd.js",
-      "bytes": 58395
+      "bytes": 59195
     },
     {
       "name": "stock",
       "title": "Appreciated Stock Gift Calculator",
       "file": "dist/stock.js",
-      "bytes": 58987
+      "bytes": 59815
     }
   ]
 }
