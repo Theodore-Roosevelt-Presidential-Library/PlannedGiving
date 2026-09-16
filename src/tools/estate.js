@@ -33,7 +33,7 @@
           GT.field('Total value of everything you own', ctl.gross, 'Home, investments, retirement accounts, business interests, and life insurance you own — before debts.'),
           GT.field('Debts, mortgage, and expected final expenses', ctl.debts),
           spouseField,
-          GT.field('Charitable bequests (to the Library and others)', ctl.charity),
+          GT.field('Charitable bequests (to {{org}} and others)', ctl.charity),
           GT.field('Taxable gifts you have already made in life', ctl.gifts, 'Gifts above the annual exclusion (' + money(t.estate.annualExclusion) + ' per person per year in ' + t.taxYear + ') that you reported on Form 709.'),
           dsueField,
           GT.field('State of residence', ctl.state)
@@ -63,8 +63,8 @@
           st ? GT.callout('warn', '<p><b>' + s.state + ' has its own estate tax</b> with a ' + t.taxYear + ' exemption of about ' + money(st) + (stateTaxable > st ? ' — your estimated taxable estate of ' + money(stateTaxable) + ' would be above it. Charitable bequests are generally deductible for state purposes too.' : '; your estimated taxable estate is below it.') + ' State rates and rules vary; check with a local estate attorney.</p>') : null,
           inh ? GT.callout('warn', '<p><b>' + s.state + ' has an inheritance tax</b> paid by certain heirs based on their relationship to you. Bequests to charities are exempt.</p>') : null,
           (!st && !inh) ? GT.callout('good', s.state + ' has no state estate or inheritance tax. Only the federal exemption matters, and it is ' + money(t.estate.exemption) + ' per person in ' + t.taxYear + ' (' + money(t.estate.exemption * 2) + ' for a married couple using portability).') : null,
-          GT.callout('info', '<p><b>Even when there is no estate tax</b>, how you give matters: leaving retirement accounts to the Library and other assets to family avoids the income tax heirs would owe on the retirement money. See the beneficiary designation guide.</p>'),
-          h('div.actions', [GT.linkBtn('Write your bequest', GT.toolUrl('bequest'), 'primary'), GT.linkBtn('Beneficiary designation guide', GT.toolUrl('beneficiary'), 'secondary'), GT.linkBtn('Heritage Society', o.urls.heritage, 'secondary')]),
+          GT.callout('info', '<p><b>Even when there is no estate tax</b>, how you give matters: leaving retirement accounts to {{org}} and other assets to family avoids the income tax heirs would owe on the retirement money. See the beneficiary designation guide.</p>'),
+          h('div.actions', [GT.linkBtn('Write your bequest', GT.toolUrl('bequest'), 'primary'), GT.linkBtn('Beneficiary designation guide', GT.toolUrl('beneficiary'), 'secondary'), GT.linkBtn(o.legacySociety, o.urls.heritage, 'secondary')]),
           GT.advisorQuestions([
             'Is my estate likely to exceed the federal or my state’s exemption, now or as it grows?',
             'Have we elected portability so my spouse’s unused exemption is preserved?',

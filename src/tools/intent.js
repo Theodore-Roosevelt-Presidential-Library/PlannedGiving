@@ -1,5 +1,5 @@
-/* @tool Letter of Intent (Heritage Society)
- * "I've included the Library in my plans." Embeds the DonorPerfect intent
+/* @tool Letter of Intent (legacy society)
+ * "I've included {{org}} in my plans." Embeds the DonorPerfect intent
  * form when a URL is configured; otherwise builds a pre-filled email. */
 (function (GT) {
   var h = GT.h, ORG = GT.ORG;
@@ -7,7 +7,7 @@
   GT.register('intent', {
     share: false,
     title: 'Tell us about your legacy gift',
-    intro: 'Have you included the Library in your will, trust, or as a beneficiary of an account? Letting us know lets us thank you, make sure we understand your wishes, and welcome you to the Heritage Society. Any details you share stay confidential and are never binding.',
+    intro: 'Have you included {{org}} in your will, trust, or as a beneficiary of an account? Letting us know lets us thank you, make sure we understand your wishes, and welcome you to the ' + window.TRPL_ORG.legacySociety + '. Any details you share stay confidential and are never binding.',
     disclaimerExtra: 'Sharing your intentions does not create a legal obligation and can be revised at any time.',
     render: function (root, GT, opts) {
       var o = ORG();
@@ -32,7 +32,7 @@
         var label = { will: 'a gift in my will or trust', beneficiary: 'a beneficiary designation', other: 'a planned gift', considering: 'that I am considering a planned gift and would like to talk' }[s.type];
         return 'Hello,\n\nI would like to let you know about ' + label + ' for the ' + o.name + '.\n\nName: ' + name.input.value + '\nEmail: ' + email.input.value + '\nPhone: ' + phone.input.value + '\nAnonymous recognition: ' + (s.anon ? 'Yes' : 'No') + '\n\n' + share.value + '\n\nThank you.';
       }
-      var send = h('a.btn.primary', { href: '#', on: { click: function (e) { e.preventDefault(); location.href = 'mailto:' + o.contactEmail + '?subject=' + encodeURIComponent('Legacy gift intention — ' + (name.input.value || 'Heritage Society')) + '&body=' + encodeURIComponent(body()); } } }, 'Send by email');
+      var send = h('a.btn.primary', { href: '#', on: { click: function (e) { e.preventDefault(); location.href = 'mailto:' + o.contactEmail + '?subject=' + encodeURIComponent(GT.brandify('Legacy gift intention — ' + (name.input.value || o.legacySociety))) + '&body=' + encodeURIComponent(GT.brandify(body())); } } }, 'Send by email');
       GT.append(root, [
         h('div.grid', [GT.field('Name', name), GT.field('Email', email), GT.field('Phone', phone)]),
         GT.field('What would you like to tell us about?', type),

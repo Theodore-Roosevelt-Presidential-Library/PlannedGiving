@@ -63,8 +63,8 @@
           s.held === 'short' ? GT.callout('warn', '<b>Held one year or less:</b> the deduction for short-term shares is limited to what you paid (' + money(basis) + '), not market value, and the gain would be taxed at ordinary rates if sold. If you can, wait until you have held the shares more than a year.') : null,
           h('div.stats', [
             GT.stat('Capital gains tax you avoid', money(taxOnSale), 'On ' + money(gain) + ' of gain at ' + pct(gainRate, 1) + ' combined.', 'good'),
-            GT.stat('Library receives if you give shares', money(fmv), 'Full market value, no tax taken out first.', 'good'),
-            GT.stat('Library receives if you sell, then give', money(cashGift), 'After ' + money(taxOnSale) + ' in tax on the sale.', 'muted'),
+            GT.stat('{{OrgBare}} receives if you give shares', money(fmv), 'Full market value, no tax taken out first.', 'good'),
+            GT.stat('{{OrgBare}} receives if you sell, then give', money(cashGift), 'After ' + money(taxOnSale) + ' in tax on the sale.', 'muted'),
             GT.stat('Your deduction for the share gift', itemizing ? money(GT.charitableAfterFloor(dedSharesUsable, s.agi)) : '—', itemizing ? 'Worth about ' + money(valShares) + ' at ' + pct(dedRate, 0) + '.' : 'Non-itemizers can’t deduct stock gifts (the ' + money(t.charitable.nonItemizer[s.status]) + ' non-itemizer deduction is for cash only) — the avoided capital gains tax is still yours to keep.', 'highlight')
           ]),
           GT.section('Side by side', h('table.table', [
@@ -72,17 +72,17 @@
             h('tbody', [
               h('tr', [h('td', 'You part with'), h('td.num', money(fmv)), h('td.num', money(fmv))]),
               h('tr', [h('td', 'Capital gains tax paid'), h('td.num', money(0)), h('td.num', money(taxOnSale))]),
-              h('tr', [h('td', 'Library receives'), h('td.num', money(fmv)), h('td.num', money(cashGift))]),
+              h('tr', [h('td', '{{OrgBare}} receives'), h('td.num', money(fmv)), h('td.num', money(cashGift))]),
               h('tr', [h('td', 'Value of your deduction'), h('td.num', money(valShares)), h('td.num', money(valCash))]),
               h('tr', [h('td', { html: '<b>Net cost to you</b>' }), h('td.num', { html: '<b>' + money(costShares) + '</b>' }), h('td.num', { html: '<b>' + money(costCash) + '</b>' })])
             ])
           ])),
-          h('p.help', { html: 'Same position either way. Giving the shares delivers <b>' + money(fmv - cashGift) + ' more</b> to the Library' + (valShares > valCash ? ' and saves you about ' + money(valShares - valCash) + ' more in income tax' : '') + '.' }),
+          h('p.help', { html: 'Same position either way. Giving the shares delivers <b>' + money(fmv - cashGift) + ' more</b> to {{org}}' + (valShares > valCash ? ' and saves you about ' + money(valShares - valCash) + ' more in income tax' : '') + '.' }),
           carry > 0 ? GT.callout('info', 'Deductions for appreciated securities are limited to <b>30% of AGI</b> in a single year. About ' + money(carry) + ' of this deduction would carry forward (up to five years).') : null,
-          GT.callout('info', '<p><b>A favorite move:</b> give the shares to the Library, then use the cash you would have given to buy the same stock back. You keep the position with a fresh, higher cost basis — and no wash-sale problem, because you didn’t sell at a loss.</p>'),
+          GT.callout('info', '<p><b>A favorite move:</b> give the shares to {{org}}, then use the cash you would have given to buy the same stock back. You keep the position with a fresh, higher cost basis — and no wash-sale problem, because you didn’t sell at a loss.</p>'),
           GT.section('How to transfer shares', h('ol.steps', [
-            h('li', { html: 'Tell your broker you want to transfer shares to <b>' + o.name + '</b>. The Library’s brokerage (DTC) instructions are on the <a href="' + o.urls.stock + '" target="_blank" rel="noopener">stock gift page</a>.' }),
-            GT.li('Transfer the shares — do not sell them. The gift date is the date the shares arrive in the Library’s account, which can take several days; plan ahead near year-end.'),
+            h('li', { html: 'Tell your broker you want to transfer shares to <b>' + o.name + '</b>. {{Org}}’s brokerage (DTC) instructions are on the <a href="' + o.urls.stock + '" target="_blank" rel="noopener">stock gift page</a>.' }),
+            GT.li('Transfer the shares — do not sell them. The gift date is the date the shares arrive in {{org}}’s account, which can take several days; plan ahead near year-end.'),
             h('li', { html: 'Email <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a> with the security, share count, and expected date so we can identify your gift and send a receipt.' }),
             GT.li('For gifts over $500 you will file IRS Form 8283 with your return; publicly traded stock does not require an appraisal.')
           ])),
@@ -112,7 +112,7 @@
         return [d, '', (pBroker.input.value || '[Brokerage firm]') + '\nAttn: Transfers', '', 'Re: Charitable transfer of securities from account ending in ' + (pAcct.input.value || '[account]'), '', 'To whom it may concern:', '',
           'Please transfer the following securities from my account as an outright charitable gift to the ' + o.name + ' (EIN ' + o.ein + '): ' + (pDesc.input.value || '[description and number of shares]') + '. Please transfer the shares in kind; do not sell them.', '',
           brokerLine, '',
-          'Please notify the Library at ' + o.contactEmail + ' when the transfer is complete, and confirm the transfer date to me. The gift is intended for the ' + t.taxYear + ' tax year.', '', 'Thank you.', '', '', (pDonor.input.value || '[Your name]') + '\n' + (pAddr.input.value || '[Your address]')].join('\n');
+          'Please notify {{org}} at ' + o.contactEmail + ' when the transfer is complete, and confirm the transfer date to me. The gift is intended for the ' + t.taxYear + ' tax year.', '', 'Thank you.', '', '', (pDonor.input.value || '[Your name]') + '\n' + (pAddr.input.value || '[Your address]')].join('\n');
       }
       function f8283(fmv, basis) {
         var fm = t.irsForms.f8283, F = fm.fields;
@@ -136,7 +136,7 @@
         }, 'highlight');
         return GT.section('Paperwork for this gift', [
           h('p.help', 'Optional. Fill in what you know and download a ready-to-sign transfer letter for your broker and a draft of IRS Form 8283 (required with your return when noncash gifts total more than $500). Built in your browser; nothing is sent anywhere.'),
-          h('div.grid', [GT.field('Your name', pDonor), GT.field('Your mailing address', pAddr), GT.field('Brokerage firm', pBroker), GT.field('Account number', pAcct), GT.field('Securities to transfer', pDesc), GT.field('Date of gift', pGift, 'The date the shares reach the Library’s account.'), GT.field('Date you acquired them (mo/yr)', pAcq), GT.field('How you acquired them', pHow)]),
+          h('div.grid', [GT.field('Your name', pDonor), GT.field('Your mailing address', pAddr), GT.field('Brokerage firm', pBroker), GT.field('Account number', pAcct), GT.field('Securities to transfer', pDesc), GT.field('Date of gift', pGift, 'The date the shares reach {{org}}’s account.'), GT.field('Date you acquired them (mo/yr)', pAcq), GT.field('How you acquired them', pHow)]),
           h('div.actions', [b1, b2, GT.copyButton(function () { return letterText(fmv); }, 'Copy letter text')]),
           pStatus
         ]);

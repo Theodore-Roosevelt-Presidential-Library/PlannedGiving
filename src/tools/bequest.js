@@ -19,7 +19,7 @@
       var pctField = GT.field('Percentage', pctCtl, 'Percentages keep pace with your estate and are easy for family to understand. Many donors choose 5% or 10%.');
       var amtField = GT.field('Dollar amount', amtCtl);
       var assetField = GT.field('Describe the asset', assetCtl);
-      var programField = GT.field('Which program or purpose?', programCtl, 'We add a clause that lets the Library redirect the gift if that purpose no longer exists — a small line that prevents big problems decades from now.');
+      var programField = GT.field('Which program or purpose?', programCtl, 'We add a clause that lets {{org}} redirect the gift if that purpose no longer exists — a small line that prevents big problems decades from now.');
 
       var ctl = {
         vehicle: GT.radios({ options: [['will', 'My will'], ['trust', 'My living trust']], value: s.vehicle, onChange: function (v) { s.vehicle = v; gen(); } }),
@@ -31,7 +31,7 @@
         purpose: GT.radios({ stacked: true, options: [
           ['unrestricted', '<b>Wherever the need is greatest</b> — the most useful kind of gift (recommended)'],
           ['program', '<b>A specific program or purpose</b>']], value: s.purpose, onChange: function (v) { s.purpose = v; show(); gen(); } }),
-        contingent: GT.checkbox('Make this a <b>contingent</b> gift — the Library receives it only if my named beneficiaries do not survive me', { value: s.contingent, onChange: function (v) { s.contingent = v; gen(); } })
+        contingent: GT.checkbox('Make this a <b>contingent</b> gift — {{org}} receives it only if my named beneficiaries do not survive me', { value: s.contingent, onChange: function (v) { s.contingent = v; gen(); } })
       };
       function show() {
         pctField.style.display = s.kind === 'pct' || s.kind === 'residue' ? '' : 'none';
@@ -64,14 +64,14 @@
         if (n) parts.push(sub(n));
         return parts.join(' ');
       }
-      function gen() { textOut.textContent = text(); }
+      function gen() { textOut.textContent = GT.brandify(text()); }
 
       GT.append(root, [
         h('div.grid.two', [
           GT.field('Where will the gift appear?', ctl.vehicle),
           GT.field('What kind of gift?', ctl.kind),
           pctField, amtField, assetField,
-          GT.field('How should the Library use it?', ctl.purpose),
+          GT.field('How should {{org}} use it?', ctl.purpose),
           programField
         ]),
         h('div', [ctl.contingent.el]),
@@ -85,7 +85,7 @@
         GT.intentStatementSection(function () { return s.vehicle === 'trust' ? 'a provision in my/our living trust' : 'a bequest in my/our will'; }, text),
         GT.advisorQuestions([
           'Should this be a percentage, a fixed amount, or a share of the residue, given the rest of my plan?',
-          'Would leaving retirement-account assets to the Library and other assets to family reduce the taxes my heirs pay?',
+          'Would leaving retirement-account assets to {{org}} and other assets to family reduce the taxes my heirs pay?',
           'Do I need a new will, or can we add this with a codicil or trust amendment?',
           'Is my estate likely to owe state estate or inheritance tax where I live?'
         ]),

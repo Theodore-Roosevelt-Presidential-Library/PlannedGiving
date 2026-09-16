@@ -8,7 +8,7 @@
 
   GT.register('lifeincome', {
     title: 'Gifts that pay you income',
-    intro: 'Some gifts give something back: fixed or variable payments for life or a term of years, a partial income-tax deduction now, and a gift to the Library later. These illustrations show the shape of each option so you can have an informed conversation with your advisor.',
+    intro: 'Some gifts give something back: fixed or variable payments for life or a term of years, a partial income-tax deduction now, and a gift to {{org}} later. These illustrations show the shape of each option so you can have an informed conversation with your advisor.',
     disclaimerExtra: 'Illustrations only. Actual deductions are calculated with IRS actuarial tables (Table 2010CM) and the §7520 rate for the month of the gift; the simplified life-expectancy math here can differ by several percentage points. Charitable gift annuities are regulated by state insurance departments and are issued only by charities licensed to do so.',
     render: function (root) {
       var t = T(), o = ORG();
@@ -30,7 +30,7 @@
         basis: GT.moneyInput({ value: s.basis, onChange: function (v) { s.basis = v; calc(); } })
       };
       GT.applyState(ctl, s); this.getState = function () { return s; };
-      var payoutField = GT.field('Annual payout rate', ctl.payout, 'Trusts must pay at least 5% and no more than 50% per year. Lower payout rates leave more for the Library and a larger deduction.');
+      var payoutField = GT.field('Annual payout rate', ctl.payout, 'Trusts must pay at least 5% and no more than 50% per year. Lower payout rates leave more for {{org}} and a larger deduction.');
       var termField = GT.field('Payment period', ctl.termType);
       var yearsField = GT.field('Number of years', ctl.years, 'Term trusts can run up to 20 years.');
       var basisField = GT.field('What you paid for the stock', ctl.basis);

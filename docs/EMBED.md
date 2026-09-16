@@ -22,6 +22,7 @@ Several tools on one page: either load each tool's script (the shared runtime is
 | `data-hide-header="true"` | Hide the tool's own title and intro (when the page already has a heading). |
 | `data-compact="true"` | Tighter padding. |
 | `data-tool-base="/support/tools/"` | Base URL for links between tools (default `https://www.trlibrary.com/support/tools/`). Links are `base + tool name`. Use a relative value on the Pages site. |
+| `data-glossary="off"` | Turn off the glossary tooltips (dotted-underline terms that open a plain-language definition and “where to find it” guidance). Definitions live in `src/glossary.js`. |
 | `data-load-fonts="false"` | Skip loading Dharma Gothic E / Clearface / Frutiger (they are loaded from the same host as the script by default; harmless when the page already has them). |
 | `data-intent-form-url="https://…"` | DonorPerfect (or any) online form for the letter of intent. Used by the **intent** tool (embedded in an iframe) and by every "Tell us about your gift" button. Leave unset for a pre-filled email fallback. |
 | `data-form-height="1100"` | Iframe height for the intent form. |

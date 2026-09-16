@@ -7,7 +7,7 @@ Read this whole file before changing anything. The most common reason a session 
 ## Ground rules
 
 1. **Every tax number lives in `src/tax-data.js`.** Never hard-code a figure in a tool. If a tool needs a new number, add it to tax-data with a comment naming the source.
-2. **Every organization fact lives in `src/config.js`.** Never hard-code a name, EIN, URL, or email in a tool.
+2. **Every organization fact lives in `src/config.js`.** Never hard-code a name, EIN, URL, or email in a tool. Refer to the organization in copy as `{{org}}` ("the Library"), `{{Org}}` (sentence start) or `{{OrgBare}}` ("Library"); `GT.h()` and the PDF/copy helpers substitute `config.shortName` at render time. Use `o.legacySociety` for the recognition society.
 3. **These tools are not tax advice and must never read as if they were.** Every tool prints the disclaimer, the tax year, and the review date. Keep estimates labeled as estimates. When a rule is uncertain, say so in the tool copy and add an advisor question rather than guessing.
 4. **Nothing a donor types may leave the browser.** No analytics, no fetches except the tool's own fonts, PDF library, and blank forms from the same host.
 5. **Voice:** warm, plain-language, friendly park ranger — not a professor and not a bank. Say "gift in your will," not "bequest," on first use. No exclamation points.
@@ -20,6 +20,7 @@ src/tax-data.js         all figures; taxYear, lastReviewed, reviewDue, lawNote
 src/config.js           organization, URLs, features, fonts, brokerage, ND endowment
 src/core.js             runtime: DOM helpers, form controls, tax helper functions, mounting
 src/share.js            shareable state (URL params), pdf-lib loader, PDF builder, form filler, advisor summary, statement of intent
+src/glossary.js         plain-language definitions; auto-wraps the first mention of each term in a tooltip (add terms here; some definitions cite figures — update them in the rollover)
 src/styles.css          scoped styles, inlined into every bundle
 src/tools/<name>.js     one tool each (15 today; see README table)
 build.js                concatenates tax-data + config + core + share + tool -> dist/<name>.js and dist/all.js
@@ -60,7 +61,8 @@ Search, in this order, and read the primary source rather than a summary wheneve
 6. **IRS Form 8283.** Check https://www.irs.gov/forms-pubs/about-form-8283 for a newer revision. If revised, download to `forms/irs-f8283-<rev>.pdf`, update `irsForms.f8283`, and re-verify field names.
 7. **State death taxes.** Search `states with estate tax <YEAR> exemption` and `states with inheritance tax <YEAR>`; states add, repeal, and index these annually. Update `stateEstateTax` and `stateInheritanceTax`.
 8. **IRS Uniform Lifetime Table** changes rarely (last 2022) — check only if you see news of new mortality tables.
-9. **Anything else the tools assert.** Grep the tools for numbers that might drift even though they are not in tax-data (they should be — move them if found): `grep -nE "\\$[0-9]|[0-9]+%" src/tools/*.js | grep -v "money(\\|pct("`.
+9. **Glossary definitions** in `src/glossary.js` quote a few figures (non-itemizer amounts, estate exemption, annual exclusion, SALT cap, RMD age). Update them to match tax-data.
+10. **Anything else the tools assert.** Grep the tools for numbers that might drift even though they are not in tax-data (they should be — move them if found): `grep -nE "\\$[0-9]|[0-9]+%" src/tools/*.js | grep -v "money(\\|pct("`.
 
 Record each source you used in `tax-data.sources`.
 

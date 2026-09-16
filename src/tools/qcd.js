@@ -6,7 +6,7 @@
 
   GT.register('qcd', {
     title: 'Give from your IRA',
-    intro: 'If you are 70½ or older, a Qualified Charitable Distribution (QCD) sends money from your IRA directly to the Library — and it never counts as taxable income. See what that could mean for you.',
+    intro: 'If you are 70½ or older, a Qualified Charitable Distribution (QCD) sends money from your IRA directly to {{org}} — and it never counts as taxable income. See what that could mean for you.',
     disclaimerExtra: 'RMD estimates use the IRS Uniform Lifetime Table and your age this year; your custodian’s figure governs. QCDs must go directly from the custodian to the charity and cannot fund a donor-advised fund.',
     render: function (root) {
       var t = T(), o = ORG();
@@ -41,7 +41,7 @@
         if (age < t.qcd.minAge) {
           var wait = Math.ceil(t.qcd.minAge - age);
           GT.append(out, [
-            GT.callout('warn', '<p><b>Not eligible yet.</b> QCDs are available once you reach 70½ — about ' + wait + ' year' + (wait === 1 ? '' : 's') + ' from now.</p><p>In the meantime, two ideas: naming the Library as a <b>beneficiary of the IRA</b> is one of the most tax-efficient legacy gifts available, and if you own <b>appreciated stock</b>, giving shares is usually better than giving cash.</p>'),
+            GT.callout('warn', '<p><b>Not eligible yet.</b> QCDs are available once you reach 70½ — about ' + wait + ' year' + (wait === 1 ? '' : 's') + ' from now.</p><p>In the meantime, two ideas: naming {{org}} as a <b>beneficiary of the IRA</b> is one of the most tax-efficient legacy gifts available, and if you own <b>appreciated stock</b>, giving shares is usually better than giving cash.</p>'),
             h('div.actions', [GT.linkBtn('Beneficiary designation guide', GT.toolUrl('beneficiary'), 'primary'), GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary')]),
             GT.advisorQuestions(['Which of my accounts should name a charity as beneficiary, and which should go to family?', 'When I reach 70½, how should QCDs fit into my withdrawal plan?'])
           ]);
@@ -80,9 +80,9 @@
           GT.callout('good', '<p><b>Why the QCD usually wins:</b> a deduction only helps if you itemize and only to the extent it clears the floor, while a QCD reduces income dollar-for-dollar. Lower adjusted gross income can also mean lower Medicare Part B and D premiums (IRMAA) and less of your Social Security being taxed — benefits this calculator does not count.</p>'),
           GT.section('How to make a QCD', h('ol.steps', [
             GT.li('Contact your IRA custodian and ask for a qualified charitable distribution payable to <b>' + o.name + '</b>, EIN <b>' + o.ein + '</b>, ' + o.address + '.'),
-            GT.li('Ask that the check be sent directly to the Library (or to you, made out to the Library — you can forward it, but it must not be payable to you).'),
+            GT.li('Ask that the check be sent directly to {{org}} (or to you, made out to {{org}} — you can forward it, but it must not be payable to you).'),
             h('li', { html: 'Email <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a> so we can watch for it — custodians often omit the donor’s name.' }),
-            GT.li('Keep the Library’s acknowledgment letter for your tax records. Your custodian will report the distribution on Form 1099-R; you or your preparer mark it as a QCD on your return.')
+            GT.li('Keep {{org}}’s acknowledgment letter for your tax records. Your custodian will report the distribution on Form 1099-R; you or your preparer mark it as a QCD on your return.')
           ])),
           h('div.actions', [GT.linkBtn('IRA giving instructions', o.urls.ira, 'primary'), GT.linkBtn('Email the giving team', 'mailto:' + o.contactEmail, 'secondary')]),
           letterSection(capped),
@@ -107,7 +107,7 @@
           '', 'To whom it may concern:', '',
           'Please make a qualified charitable distribution under Internal Revenue Code § 408(d)(8) from my IRA in the amount of ' + money(amount) + ', payable to:', '',
           o.name + '\nTax ID (EIN) ' + o.ein + '\n' + o.address, '',
-          'Please send the check directly to the address above (or to me, made payable to the ' + o.name + ', for forwarding). Do not withhold federal or state income tax from this distribution. Please include my name on the check or in the accompanying correspondence so the Library can identify the gift, and confirm the date the distribution is made so it can be applied to the ' + t.taxYear + ' tax year.', '',
+          'Please send the check directly to the address above (or to me, made payable to the ' + o.name + ', for forwarding). Do not withhold federal or state income tax from this distribution. Please include my name on the check or in the accompanying correspondence so {{org}} can identify the gift, and confirm the date the distribution is made so it can be applied to the ' + t.taxYear + ' tax year.', '',
           'Thank you.', '', '', (lDonor.input.value || '[Your name]') + '\n' + (lAddr.input.value || '[Your address]')].join('\n');
       }
       function letterSection(amount) {
@@ -119,7 +119,7 @@
             .then(function () { btn.disabled = false; });
         }, 'primary');
         return GT.section('Letter to your IRA custodian', [
-          h('p.help', 'Fill in the blanks and download a ready-to-sign request for a ' + money(amount) + ' QCD payable to the Library. Nothing you type leaves your browser.'),
+          h('p.help', 'Fill in the blanks and download a ready-to-sign request for a ' + money(amount) + ' QCD payable to {{org}}. Nothing you type leaves your browser.'),
           h('div.grid', [GT.field('Your name', lDonor), GT.field('Your mailing address', lAddr), GT.field('IRA custodian', lCust), GT.field('Account number', lAcct)]),
           h('div.actions', [btn, GT.copyButton(function () { return letterText(amount); }, 'Copy letter text')]),
           lStatus

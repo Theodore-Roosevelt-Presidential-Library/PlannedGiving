@@ -56,7 +56,7 @@
   var GLYPH_MAP = { '\u2605': '*', '\u2713': '-', '\u2714': '-', '\u2248': '~', '\u2192': '->', '\u2190': '<-', '\u2264': '<=', '\u2265': '>=', '\u2212': '-', '\u2153': '1/3', '\u2154': '2/3', '\u00bd': '1/2', '\u00bc': '1/4', '\u00be': '3/4', '\u2009': ' ', '\u202f': ' ', '\u00a0': ' ' };
   var WINANSI_EXTRA = '\u2018\u2019\u201a\u201c\u201d\u201e\u2020\u2021\u2022\u2026\u2030\u2039\u203a\u20ac\u2122\u2013\u2014\u02dc\u02c6\u0152\u0153\u0160\u0161\u0178\u017d\u017e\u0192';
   function pdfSafe(text) {
-    return String(text).split('').map(function (ch) {
+    return GT.brandify(String(text)).split('').map(function (ch) {
       if (GLYPH_MAP[ch] != null) return GLYPH_MAP[ch];
       var c = ch.charCodeAt(0); return (c < 0x100 || WINANSI_EXTRA.indexOf(ch) >= 0) ? ch : '';
     }).join('');
@@ -117,7 +117,7 @@
           });
           if (opts.disclaimer !== false) {
             ensure(80); y -= 8; page.drawLine({ start: { x: M, y: y }, end: { x: W - M, y: y }, thickness: 0.5, color: line }); y -= 14;
-            para(o.name + ' is not a tax, legal, or financial advisor. This document contains general information and estimates prepared from figures you entered; it is not advice. Please review it with your own attorney, accountant, or financial advisor. Federal figures reflect tax year ' + t.taxYear + ' (reviewed ' + t.lastReviewed + '). Prepared ' + today() + ' with the Library’s giving tools at ' + o.urls.tools + '.', 8, F, gray);
+            para(o.name + ' is not a tax, legal, or financial advisor. This document contains general information and estimates prepared from figures you entered; it is not advice. Please review it with your own attorney, accountant, or financial advisor. Federal figures reflect tax year ' + t.taxYear + ' (reviewed ' + t.lastReviewed + '). Prepared ' + today() + ' with {{org}}’s giving tools at ' + o.urls.tools + '.', 8, F, gray);
           }
           footer();
           return doc.save();
@@ -146,7 +146,7 @@
   }
   /* Turn multi-line letter text into document blocks (one block per line, gaps for blank lines) */
   function letterBlocks(text) { return String(text).split('\n').map(function (ln) { return ln.trim() ? { p: ln } : { gap: 8 }; }); }
-  function draftStamp() { return 'DRAFT — prepared with the Library’s giving tools on ' + new Date().toLocaleDateString('en-US') + '. Estimates only; review with your tax preparer before filing.'; }
+  function draftStamp() { return 'DRAFT — prepared with {{org}}’s giving tools on ' + new Date().toLocaleDateString('en-US') + '. Estimates only; review with your tax preparer before filing.'; }
 
   /* ---- Advisor one-pager, read from what the tool is showing ------------- */
   function visible(el) { return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length); }
@@ -173,12 +173,12 @@
   }
   function advisorPDF(root, title) {
     var o = ORG(), sm = summaryFromDOM(root), blocks = [];
-    blocks.push({ p: 'A summary of the scenario explored with the Library’s “' + title + '” tool, prepared to share with a financial, tax, or legal advisor.' });
+    blocks.push({ p: 'A summary of the scenario explored with {{org}}’s “' + title + '” tool, prepared to share with a financial, tax, or legal advisor.' });
     if (sm.inputs.length) { blocks.push({ h: 'What was entered' }); blocks.push({ kv: sm.inputs }); }
     if (sm.results.length) { blocks.push({ h: 'What the tool showed' }); blocks.push({ kv: sm.results }); }
     if (sm.notes.length) { blocks.push({ h: 'Notes' }); blocks.push({ ul: sm.notes.slice(0, 8) }); }
     if (sm.questions.length) { blocks.push({ h: 'Questions to discuss with your advisor' }); blocks.push({ ul: sm.questions }); }
-    blocks.push({ h: 'About the Library' }); blocks.push({ kv: [['Legal name', o.name], ['Tax ID (EIN)', o.ein], ['Address', o.address], ['Gift planning contact', (o.contactName ? o.contactName + ', ' : '') + o.contactEmail]] });
+    blocks.push({ h: 'About {{org}}' }); blocks.push({ kv: [['Legal name', o.name], ['Tax ID (EIN)', o.ein], ['Address', o.address], ['Gift planning contact', (o.contactName ? o.contactName + ', ' : '') + o.contactEmail]] });
     return makePDF({ title: title, subtitle: 'Advisor summary · prepared ' + today(), blocks: blocks });
   }
   function shareBar(name, root, title, getState) {
@@ -200,10 +200,10 @@
   function intentStatement(opts) {
     var o = ORG(); opts = opts || {};
     var blocks = [
-      { p: 'I/we are pleased to share that the ' + o.name + ' has been included in my/our estate plans through ' + (opts.kind || 'a gift in my/our will or trust') + '. This statement is provided so the Library can plan for the future and recognize my/our commitment through the ' + o.legacySociety + '. It is an expression of intent, not a legal obligation, and may be changed at any time.' },
+      { p: 'I/we are pleased to share that the ' + o.name + ' has been included in my/our estate plans through ' + (opts.kind || 'a gift in my/our will or trust') + '. This statement is provided so {{org}} can plan for the future and recognize my/our commitment through the ' + o.legacySociety + '. It is an expression of intent, not a legal obligation, and may be changed at any time.' },
       { h: 'Donor' }, { kv: [['Name(s)', opts.name], ['Address', opts.address], ['Email / phone', opts.contact]] },
       { h: 'Gift' }, { kv: [['Type of gift', opts.kind], ['Description (optional)', opts.description], ['Estimated value (optional)', opts.value || 'Prefer not to say'], ['Purpose', opts.purpose || 'General charitable purposes'], ['Recognition', opts.anonymous ? 'Please keep my/our gift anonymous' : 'You may list my/our name(s) in ' + o.legacySociety + ' recognition']] },
-      { h: 'Documents' }, { p: 'Where possible, a copy of the relevant page of the will, trust, or beneficiary designation is attached or will be provided. The Library keeps this information confidential.' },
+      { h: 'Documents' }, { p: 'Where possible, a copy of the relevant page of the will, trust, or beneficiary designation is attached or will be provided. {{Org}} keeps this information confidential.' },
       { sig: ['Donor signature', 'Date'] }, { sig: ['Second donor signature (if joint)', 'Date'] },
       { small: 'Return to: ' + o.name + ', ' + o.address + ' · ' + o.contactEmail + (o.urls.intentForm ? ' · or complete the online form at ' + o.urls.intentForm : '') }
     ];
@@ -220,8 +220,8 @@
         .catch(function (e) { st.textContent = 'Could not build the PDF (' + e.message + ').'; }).then(function () { btn.disabled = false; });
     }, 'primary');
     return section('Printable statement of intent', [
-      h('p.help', 'Prefer paper? Download a signable ' + o.legacySociety + ' statement to keep with your estate documents and mail or email to the Library.'),
-      h('div.grid', [field('Name(s)', name), field('Mailing address', addr), field('Email or phone', contact), field('Estimated value', value, 'Entirely optional — it helps the Library plan.')]),
+      h('p.help', 'Prefer paper? Download a signable ' + o.legacySociety + ' statement to keep with your estate documents and mail or email to {{org}}.'),
+      h('div.grid', [field('Name(s)', name), field('Mailing address', addr), field('Email or phone', contact), field('Estimated value', value, 'Entirely optional — it helps {{org}} plan.')]),
       h('div', [anon.el]), h('div.actions', [btn]), st
     ]);
   }

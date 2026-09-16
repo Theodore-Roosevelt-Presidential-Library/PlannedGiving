@@ -20,7 +20,7 @@ const core = read('core.js')
   .replace(/__VERSION__/g, VERSION)
   .replace('"__CSS__"', JSON.stringify(css));
 const shared = ['/* TRPL Giving Tools v' + VERSION + ' — https://givingtools.labs.trlibrary.com — built ' + new Date().toISOString().slice(0, 10) + ' */',
-  read('tax-data.js'), read('config.js'), core, read('share.js')].join('\n');
+  read('tax-data.js'), read('config.js'), core, read('share.js'), read('glossary.js')].join('\n');
 
 fs.mkdirSync(DIST, { recursive: true });
 const tools = fs.readdirSync(path.join(SRC, 'tools')).filter(f => f.endsWith('.js')).sort();

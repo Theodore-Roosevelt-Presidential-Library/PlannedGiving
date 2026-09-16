@@ -41,14 +41,20 @@
   /* ---------------------------------------------------------------------- */
   /* Tiny DOM helper: h('div.cls', {attr}, [children])                       */
   /* ---------------------------------------------------------------------- */
+  /* Organization short-name tokens in copy: {{org}} = shortName ("the Library"), {{Org}} = capitalized, {{OrgBare}} = without the article ("Library") */
+  function brandify(str) {
+    if (typeof str !== 'string' || str.indexOf('{{') < 0) return str;
+    var o = ORG(), sn = o.shortName || o.name, bare = sn.replace(/^(the|a|an)\s+/i, ''), cap = sn.charAt(0).toUpperCase() + sn.slice(1);
+    return str.replace(/\{\{org\}\}/g, sn).replace(/\{\{Org\}\}/g, cap).replace(/\{\{OrgBare\}\}/g, bare);
+  }
   function h(tag, attrs, children) {
     if (Array.isArray(attrs) || typeof attrs === 'string' || attrs instanceof Node) { children = attrs; attrs = null; }
     var parts = tag.split('.'), el = document.createElement(parts[0] || 'div');
     if (parts.length > 1) el.className = parts.slice(1).map(function (c) { return 'trpl-' + c; }).join(' ');
     if (attrs) Object.keys(attrs).forEach(function (k) {
       var v = attrs[k];
-      if (k === 'html') el.innerHTML = v;
-      else if (k === 'text') el.textContent = v;
+      if (k === 'html') el.innerHTML = brandify(v);
+      else if (k === 'text') el.textContent = brandify(v);
       else if (k === 'on') Object.keys(v).forEach(function (ev) { el.addEventListener(ev, v[ev]); });
       else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
       else if (v === false || v == null) { /* skip */ }
@@ -64,7 +70,7 @@
     children.forEach(function (c) {
       if (c == null || c === false) return;
       if (Array.isArray(c)) return append(el, c);
-      el.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+      el.appendChild(c instanceof Node ? c : document.createTextNode(brandify(String(c))));
     });
     return el;
   }
@@ -234,7 +240,7 @@
   function linkBtn(label, href, kind) { return h('a.btn' + (kind ? '.' + kind : ''), { href: href, target: '_blank', rel: 'noopener' }, label); }
   function copyButton(getText, label) {
     var b = button(label || 'Copy text', function () {
-      var t = getText();
+      var t = brandify(getText());
       var done = function () { b.textContent = 'Copied ✓'; setTimeout(function () { b.textContent = label || 'Copy text'; }, 1800); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { fallback(t); done(); });
       else { fallback(t); done(); }
@@ -261,8 +267,8 @@
   }
   function intentCTA(text) {
     var o = ORG();
-    var href = o.urls.intentForm || ('mailto:' + o.contactEmail + '?subject=' + encodeURIComponent('I have included the Library in my plans') + '&body=' + encodeURIComponent('Hello,\n\nI would like to let you know that I have included the ' + o.name + ' in my estate plans.\n\nName:\nPhone:\nBest way to reach me:\n\nThank you.'));
-    return h('div.cta', [h('p', text || 'If you have already included the Library in your plans, please let us know so we can thank you and welcome you to the ' + o.legacySociety + '.'), linkBtn('Tell us about your gift', href, 'primary')]);
+    var href = o.urls.intentForm || ('mailto:' + o.contactEmail + '?subject=' + encodeURIComponent(brandify('I have included {{org}} in my plans')) + '&body=' + encodeURIComponent('Hello,\n\nI would like to let you know that I have included the ' + o.name + ' in my estate plans.\n\nName:\nPhone:\nBest way to reach me:\n\nThank you.'));
+    return h('div.cta', [h('p', text || 'If you have already included {{org}} in your plans, please let us know so we can thank you and welcome you to the ' + o.legacySociety + '.'), linkBtn('Tell us about your gift', href, 'primary')]);
   }
 
   /* ---------------------------------------------------------------------- */
@@ -298,7 +304,7 @@
     if (opts.accent) root.style.setProperty('--trpl-accent', opts.accent);
     if (opts.compact === 'true') root.classList.add('trpl-compact');
     clear(el).appendChild(root);
-    var head = h('div.head', [h('div.eyebrow', ORG().shortName === 'the Library' ? 'Giving Tools' : ORG().shortName), h('h2.h2', def.title), def.intro ? h('p.intro', { html: def.intro }) : null]);
+    var head = h('div.head', [h('div.eyebrow', ORG().eyebrow || 'Giving Tools'), h('h2.h2', def.title), def.intro ? h('p.intro', { html: def.intro }) : null]);
     if (opts.hideHeader === 'true') head.style.display = 'none';
     root.appendChild(head);
     var body = h('div.body');
@@ -306,6 +312,7 @@
     try {
       def.render(body, GT, opts);
       if (def.share !== false && GT.shareBar) body.appendChild(GT.shareBar(name, root, def.title, def.getState));
+      if (GT.glossify && opts.glossary !== 'off') { GT.glossify(root); GT.glossaryWatch(root); }
     }
     catch (e) { body.appendChild(callout('warn', 'This tool could not load. Please refresh the page or contact ' + ORG().contactEmail + '.')); if (window.console) console.error('[TRPL Giving Tools]', name, e); }
     if (def.disclaimer !== false) root.appendChild(disclaimer(def.disclaimerExtra));
@@ -330,7 +337,7 @@
 
   /* Public helper surface used by the tools */
   Object.assign(GT, {
-    h: h, append: append, clear: clear, num: num, money: money, pct: pct, clamp: clamp, interp: interp,
+    h: h, brandify: brandify, append: append, clear: clear, num: num, money: money, pct: pct, clamp: clamp, interp: interp,
     T: T, ORG: ORG, marginalRate: marginalRate, ltcgRate: ltcgRate, deductionRate: deductionRate, stdDeduction: stdDeduction,
     seniorBonus: seniorBonus, saltAllowed: saltAllowed, charitableAfterFloor: charitableAfterFloor, nonItemizerDeduction: nonItemizerDeduction,
     lifeExpectancy: lifeExpectancy, pvAnnuity: pvAnnuity,

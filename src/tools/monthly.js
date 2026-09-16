@@ -6,8 +6,8 @@
 
   GT.register('monthly', {
     title: 'Small monthly gifts, big yearly impact',
-    intro: 'Monthly giving spreads your support across the year and gives the Library a steady base to plan on. Slide to see what your gift adds up to.',
-    disclaimerExtra: 'Monthly gifts are charged to your card or bank account on the same day each month and can be changed or cancelled at any time. Cash gifts to the Library qualify for the ' + money(T().charitable.nonItemizer.single) + ' / ' + money(T().charitable.nonItemizer.mfj) + ' non-itemizer deduction in ' + T().taxYear + '.',
+    intro: 'Monthly giving spreads your support across the year and gives {{org}} a steady base to plan on. Slide to see what your gift adds up to.',
+    disclaimerExtra: 'Monthly gifts are charged to your card or bank account on the same day each month and can be changed or cancelled at any time. Cash gifts to {{org}} qualify for the ' + money(T().charitable.nonItemizer.single) + ' / ' + money(T().charitable.nonItemizer.mfj) + ' non-itemizer deduction in ' + T().taxYear + '.',
     render: function (root) {
       var o = ORG(), t = T();
       var s = GT.state('monthly', { amt: 25 }); this.getState = function () { return s; };
@@ -32,7 +32,7 @@
             GT.stat('Over five years', money(yr * 5), null, 'highlight')
           ]),
           GT.bars([{ label: 'Year 1', value: yr, tone: 'good' }, { label: 'Year 3', value: yr * 3, tone: 'good' }, { label: 'Year 5', value: yr * 5, tone: 'highlight' }]),
-          GT.callout('info', '<p>A monthly gift of ' + money(a) + ' gives the Library the same support as a ' + money(yr) + ' annual gift — spread out so it fits your budget. You’ll receive one year-end summary for your taxes.</p>'),
+          GT.callout('info', '<p>A monthly gift of ' + money(a) + ' gives {{org}} the same support as a ' + money(yr) + ' annual gift — spread out so it fits your budget. You’ll receive one year-end summary for your taxes.</p>'),
           h('div.actions', [GT.linkBtn('Start a ' + money(a) + ' monthly gift', o.urls.donateMonthly + (o.urls.donateMonthly.indexOf('?') >= 0 ? '&' : '?') + 'amount=' + a, 'primary'), GT.linkBtn('Give once instead', o.urls.donate, 'secondary'), GT.linkBtn('Become a member', o.urls.membership, 'secondary')]),
           GT.contactLine()
         ]);

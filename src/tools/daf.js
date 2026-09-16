@@ -6,7 +6,7 @@
 
   GT.register('daf', {
     title: 'Give from your donor-advised fund',
-    intro: 'Already have a donor-advised fund? A grant to the Library takes a few minutes. Pick your sponsor for steps, or use the helper to decide whether a DAF makes sense for you.',
+    intro: 'Already have a donor-advised fund? A grant to {{org}} takes a few minutes. Pick your sponsor for steps, or use the helper to decide whether a DAF makes sense for you.',
     disclaimerExtra: 'Grants from a donor-advised fund cannot be used to pay for membership benefits, event tickets, or anything of value to you. You already received your deduction when you funded the DAF, so a grant is not deductible again.',
     render: function (root) {
       var o = ORG(), t = T();
@@ -40,10 +40,10 @@
         ]);
       }
       function recText() {
-        var memo = s.purpose === 'general' ? 'For the Library’s general charitable purposes.' : s.purpose === 'heritage' ? 'In honor of ' + (honoree.input.value || '[name]') + '.' : 'For ' + (honoree.input.value || '[program]') + ', or where the need is greatest if that program is fully funded.';
+        var memo = s.purpose === 'general' ? 'For {{org}}’s general charitable purposes.' : s.purpose === 'heritage' ? 'In honor of ' + (honoree.input.value || '[name]') + '.' : 'For ' + (honoree.input.value || '[program]') + ', or where the need is greatest if that program is fully funded.';
         return 'Grant recommendation\nRecipient: ' + o.name + '\nEIN: ' + o.ein + '\nAddress: ' + o.address + '\nAmount: ' + money(s.amount) + (s.recurring ? ' (recurring)' : '') + '\nPurpose: ' + memo + '\nDonor acknowledgment: please share my name and address with the recipient.';
       }
-      function gen() { rec.textContent = recText(); }
+      function gen() { rec.textContent = GT.brandify(recText()); }
 
       // DAF vs direct helper
       var helperOut = h('div.section');
@@ -54,11 +54,11 @@
       function helper() {
         GT.clear(helperOut);
         var msg, tone = 'info';
-        if (hs.asset === 'ira') { msg = '<b>Skip the DAF.</b> Qualified charitable distributions from an IRA cannot go to a donor-advised fund — send the QCD straight to the Library instead. It keeps the amount out of your income entirely.'; tone = 'warn'; }
-        else if (hs.horizon === 'once' && hs.itemize !== 'no') { msg = '<b>Give directly.</b> For a one-time gift while itemizing, a direct gift to the Library is simplest and equally deductible' + (hs.asset === 'stock' ? ' — transfer the shares to the Library and skip the middle step.' : '.'); }
+        if (hs.asset === 'ira') { msg = '<b>Skip the DAF.</b> Qualified charitable distributions from an IRA cannot go to a donor-advised fund — send the QCD straight to {{org}} instead. It keeps the amount out of your income entirely.'; tone = 'warn'; }
+        else if (hs.horizon === 'once' && hs.itemize !== 'no') { msg = '<b>Give directly.</b> For a one-time gift while itemizing, a direct gift to {{org}} is simplest and equally deductible' + (hs.asset === 'stock' ? ' — transfer the shares to {{org}} and skip the middle step.' : '.'); }
         else if (hs.horizon === 'once' && hs.itemize === 'no') { msg = '<b>Give directly</b> — and note that in ' + t.taxYear + ' non-itemizers may deduct up to ' + money(t.charitable.nonItemizer.single) + ' (' + money(t.charitable.nonItemizer.mfj) + ' joint) of <i>cash</i> gifts made directly to charities. That deduction does not apply to DAF contributions.'; }
-        else if (hs.itemize === 'no' || hs.itemize === 'unsure') { msg = '<b>A DAF may help.</b> Fund it with several years of giving' + (hs.asset === 'stock' ? ' in appreciated stock' : '') + ' in one year so you can itemize that year (“bunching”), then grant to the Library annually. Compare the numbers with the bunching calculator.'; tone = 'good'; }
-        else { msg = '<b>Either works.</b> You itemize and plan to give over time. A DAF adds convenience (one tax receipt, easy stock gifts, grants on your schedule) at the cost of sponsor fees and a step between you and the Library. Direct gifts each year are just as deductible and let the Library put your gift to work immediately.'; }
+        else if (hs.itemize === 'no' || hs.itemize === 'unsure') { msg = '<b>A DAF may help.</b> Fund it with several years of giving' + (hs.asset === 'stock' ? ' in appreciated stock' : '') + ' in one year so you can itemize that year (“bunching”), then grant to {{org}} annually. Compare the numbers with the bunching calculator.'; tone = 'good'; }
+        else { msg = '<b>Either works.</b> You itemize and plan to give over time. A DAF adds convenience (one tax receipt, easy stock gifts, grants on your schedule) at the cost of sponsor fees and a step between you and {{org}}. Direct gifts each year are just as deductible and let {{org}} put your gift to work immediately.'; }
         GT.append(helperOut, [GT.callout(tone, '<p>' + msg + '</p>'), h('div.actions', [hs.asset === 'ira' ? GT.linkBtn('IRA giving calculator', GT.toolUrl('qcd'), 'primary') : (hs.itemize === 'no' && hs.horizon === 'multi') ? GT.linkBtn('Bunching calculator', GT.toolUrl('bunching'), 'primary') : GT.linkBtn('Give now', o.urls.donate, 'primary'), hs.asset === 'stock' ? GT.linkBtn('Stock gift calculator', GT.toolUrl('stock'), 'secondary') : null])]);
       }
 
@@ -74,12 +74,12 @@
           h('div.grid', [GT.field('Do you itemize?', hi), GT.field('What would you give?', ha), GT.field('Timing', hh)]),
           helperOut
         ]),
-        GT.callout('info', '<p><b>Two more DAF ideas.</b> Name the Library as a <b>successor beneficiary</b> of your fund so your giving continues. ' + (o.communityFoundation ? 'And if you keep a DAF at a community foundation such as the ' + o.communityFoundation + ', ask about recurring grants — set once, delivered every year.' : '') + '</p>'),
+        GT.callout('info', '<p><b>Two more DAF ideas.</b> Name {{org}} as a <b>successor beneficiary</b> of your fund so your giving continues. ' + (o.communityFoundation ? 'And if you keep a DAF at a community foundation such as the ' + o.communityFoundation + ', ask about recurring grants — set once, delivered every year.' : '') + '</p>'),
         GT.advisorQuestions([
           'Should I fund my DAF with appreciated securities rather than cash?',
           'How much should I contribute this year to make itemizing worthwhile?',
           'What are my sponsor’s fees and minimum grant size, and are there better options?',
-          'Should the Library be named as a successor beneficiary of my fund?'
+          'Should {{org}} be named as a successor beneficiary of my fund?'
         ]),
         GT.contactLine()
       ]);

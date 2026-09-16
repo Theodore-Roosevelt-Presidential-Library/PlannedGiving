@@ -36,13 +36,9 @@ Then rebuild: `node build.js && node gen-pages.js`.
 
 ## 3. Copy
 
-The tools refer to the organization as **"the Library"** in about a hundred places — a deliberate choice to keep the copy warm rather than templated. If you are a museum, foundation, or school, replace it once:
+The tools refer to the organization as **"the Library"** — but only through `shortName` in the config, which the copy reads at render time (`{{org}}` mid-sentence, `{{Org}}` at the start of a sentence, `{{OrgBare}}` without the article, as in "Museum receives"). Set `shortName: 'the Museum'` (or `'the Foundation'`, `'Habitat'`) and every calculator, letter, PDF, and tooltip follows. `legacySociety` names your recognition society the same way, and `eyebrow` is the small label above each tool's title.
 
-```bash
-grep -rl "the Library" src/tools src/share.js | xargs sed -i 's/the Library’s/the Museum’s/g; s/the Library/the Museum/g; s/Library receives/Museum receives/g'
-```
-
-Review `src/tools/*.js` afterwards for a handful of "Library" uses without "the" (stat labels such as "Library receives if you give shares"). Also read through `src/tools/navigator.js` and `src/tools/acknowledgments.js`, which carry the most narrative copy.
+Read through `src/tools/navigator.js` and `src/tools/acknowledgments.js` afterwards; they carry the most narrative copy and may deserve a sentence or two in your own voice.
 
 ## 4. Fonts and colors
 

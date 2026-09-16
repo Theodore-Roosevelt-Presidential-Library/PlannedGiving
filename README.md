@@ -57,6 +57,8 @@ This repo publishes the same structure, so `givingtools.labs.trlibrary.com/suppo
 src/tax-data.js     ← every tax figure, one file, stamped with taxYear + lastReviewed
 src/config.js       ← EIN, address, URLs, contact, brand palette, offersGiftAnnuities
 src/core.js         ← shared runtime (DOM helpers, form controls, tax helpers, mounting)
+src/share.js        ← shareable links, PDF builder, form filler, advisor summary, statement of intent
+src/glossary.js     ← plain-language definitions + tooltips (auto-links the first mention of each term)
 src/styles.css      ← scoped styles, inlined into every bundle at build time
 src/tools/*.js      ← one file per tool
 build.js            ← concatenates → dist/<tool>.js (+ all.js, manifest.json)
@@ -95,7 +97,7 @@ All figures live in `src/tax-data.js`. The IRS publishes next year's inflation a
 
 ## Forking
 
-Any nonprofit can use this. Everything organization-specific is in `src/config.js` (plus your own fonts and palette); `features.ndCredit: false` removes the North Dakota-specific pieces. Step-by-step in [docs/FORKING.md](docs/FORKING.md). `CLAUDE.md` is the playbook for the annual tax-year rollover, written for an AI assistant or a human maintainer.
+Any nonprofit can use this. Everything organization-specific is in `src/config.js` — including how the copy refers to you (`shortName`) — plus your own fonts and palette; `features.ndCredit: false` removes the North Dakota-specific pieces. Step-by-step in [docs/FORKING.md](docs/FORKING.md). `CLAUDE.md` is the playbook for the annual tax-year rollover, written for an AI assistant or a human maintainer.
 
 ## License
 

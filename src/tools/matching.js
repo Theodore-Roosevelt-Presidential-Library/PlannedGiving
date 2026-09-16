@@ -10,7 +10,7 @@
     disclaimerExtra: 'Matching programs are set by each employer and change often; the impact shown is an estimate. Membership dues and event tickets are usually not matched.',
     render: function (root, GT, opts) {
       var o = ORG();
-      /* Optional: embed the Library's Double the Donation employer search.
+      /* Optional: embed {{org}}'s Double the Donation employer search.
        * Pass data-dtd-key="<public API key>" on the placeholder (the same key
        * the plugin on trlibrary.com/matching-gifts uses). Nothing loads unless
        * a key is provided. */
@@ -56,14 +56,14 @@
           h('div.stats', [
             GT.stat(s.monthly ? 'Your gifts this year' : 'Your gift', money(base), null, 'muted'),
             GT.stat('Employer match', money(match), s.cap > 0 && base * parseFloat(s.ratio) > s.cap ? 'Limited by your employer’s ' + money(s.cap) + ' cap.' : null, 'good'),
-            GT.stat('Total impact for the Library', money(base + match), null, 'highlight')
+            GT.stat('Total impact for {{org}}', money(base + match), null, 'highlight')
           ]),
           GT.bars([{ label: 'Your gift', value: base, tone: 'muted' }, { label: 'With match', value: base + match, tone: 'good' }]),
           GT.section('How to claim your match', h('ol.steps', [
-            h('li', { html: 'Make your gift to the Library first (<a href="' + o.urls.donate + '" target="_blank" rel="noopener">give online</a>) and keep the receipt.' }),
+            h('li', { html: 'Make your gift to {{org}} first (<a href="' + o.urls.donate + '" target="_blank" rel="noopener">give online</a>) and keep the receipt.' }),
             GT.li('Find your employer’s matching gift form or portal — usually under “Giving,” “Community,” or “Benefits” in HR — or ask your HR team. Many companies use Benevity, YourCause, CyberGrants, or Bright Funds.'),
-            h('li', { html: 'Submit the request with the Library’s details: <b>' + o.name + '</b>, EIN <b>' + o.ein + '</b>, ' + o.address + '.' }),
-            h('li', { html: 'The employer verifies the gift with the Library and sends the match — typically within a few weeks to a few months. Questions: <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a>.' })
+            h('li', { html: 'Submit the request with {{org}}’s details: <b>' + o.name + '</b>, EIN <b>' + o.ein + '</b>, ' + o.address + '.' }),
+            h('li', { html: 'The employer verifies the gift with {{org}} and sends the match — typically within a few weeks to a few months. Questions: <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a>.' })
           ])),
           GT.callout('info', '<p><b>Don’t assume you’re not eligible.</b> Many programs cover part-time employees, retirees, spouses, and board members, and some match volunteer hours with grants. Deadlines are often the end of the calendar year or a set number of months after the gift.</p>'),
           h('div.actions', [GT.linkBtn('Matching gifts page', o.urls.matching, 'primary'), GT.linkBtn('Give now', o.urls.donate, 'secondary')]),

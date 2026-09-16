@@ -6,7 +6,11 @@
  * ========================================================================== */
 window.TRPL_ORG = {
   name: 'Theodore Roosevelt Presidential Library Foundation',
+  /* How the copy refers to you mid-sentence, article included: 'the Library',
+   * 'the Museum', 'the Foundation', 'Habitat'. Used everywhere the tools say
+   * {{org}}; {{Org}} capitalizes it and {{OrgBare}} drops the article. */
   shortName: 'the Library',
+  eyebrow: 'Giving Tools',              // small label above every tool's title
   ein: '47-1324043',
   address: '1401 East Calgary Ave, Suite 210, Bismarck, ND 58503',
   city: 'Bismarck', state: 'ND', stateName: 'North Dakota',

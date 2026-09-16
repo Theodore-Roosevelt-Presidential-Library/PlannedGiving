@@ -23,7 +23,7 @@
       var ctl = {
         who: GT.radios({ options: [['individual', 'An individual or couple'], ['business', 'A business, trust, or estate']], value: 'individual', onChange: function (v) { s.who = v; toggle(); calc(); } }),
         kind: GT.radios({ stacked: true, options: [
-          ['endowment', '<b>An outright gift to the endowment</b> — cash, stock, or other assets given now to the Library’s permanent endowment fund'],
+          ['endowment', '<b>An outright gift to the endowment</b> — cash, stock, or other assets given now to {{org}}’s permanent endowment fund'],
           ['planned', '<b>A planned gift</b> — a charitable gift annuity, remainder trust, lead trust, life estate, or paid-up life insurance policy']], value: 'endowment', onChange: function (v) { s.kind = v; toggle(); calc(); } }),
         status: GT.select({ options: GT.FILING, value: 'mfj', onChange: function (v) { s.status = v; calc(); } }),
         gift: GT.moneyInput({ value: s.gift, onChange: function (v) { s.gift = v; calc(); } }),
@@ -36,7 +36,7 @@
       GT.applyState(ctl, s); this.getState = function () { return s; };
       var statusField = GT.field('Filing status', ctl.status);
       var giftField = GT.field('Gift to the endowment', ctl.gift, 'Individuals must give at least ' + money(c.minGift) + ' in a year (one gift or several) to qualify. A gift of ' + money(c.maxIndividual / c.rate) + ' earns the full ' + money(c.maxIndividual) + ' credit for one person; ' + money(c.maxJoint / c.rate) + ' earns ' + money(c.maxJoint) + ' for a couple filing jointly.');
-      var dedField = GT.field('Federal charitable deduction for the planned gift', ctl.deduction, 'The credit is 40% of the <i>deductible portion</i> of a planned gift — the present value of what the Library will eventually receive — not the whole amount you transfer. The <a href="' + GT.toolUrl('lifeincome') + '" target="_blank" rel="noopener">life-income illustrator</a> estimates it.');
+      var dedField = GT.field('Federal charitable deduction for the planned gift', ctl.deduction, 'The credit is 40% of the <i>deductible portion</i> of a planned gift — the present value of what {{org}} will eventually receive — not the whole amount you transfer. The <a href="' + GT.toolUrl('lifeincome') + '" target="_blank" rel="noopener">life-income illustrator</a> estimates it.');
       var ndField = GT.field('Your North Dakota taxable income', ctl.ndIncome, 'North Dakota starts from federal taxable income. Used only to estimate how much of the credit you can use this year versus carry forward.');
       var rateField = GT.field('Your federal tax bracket', ctl.rate);
       var itemField = GT.field('Do you itemize federal deductions?', ctl.itemize);
@@ -106,8 +106,8 @@
           kind === 'endowment' && !tooSmall && credit < cap && !biz ? GT.callout('info', 'A gift of <b>' + money(cap / c.rate) + '</b> would earn the full ' + money(cap) + ' credit' + (s.status !== 'mfj' ? '; couples filing jointly can claim up to ' + money(c.maxJoint) + ' on ' + money(c.maxJoint / c.rate) : '') + '.') : null,
           GT.callout('good', '<p><b>Stack the benefits.</b> Give appreciated stock to the endowment and you avoid capital gains tax, may deduct it federally (net of the credit), and claim the 40% state credit. A qualified charitable distribution from an IRA (age 70½+) can also fund the endowment and earn the credit; it stays out of your <i>federal</i> income.</p><p><b>No double-dip on the state return:</b> North Dakota adds the federally deducted portion of the gift — or the IRA amount excluded federally — back to state taxable income (Form ND-1, line 2). At North Dakota’s 1.95–2.5% rates that costs a few hundred dollars at most against a credit worth thousands.</p>'),
           o.ndEndowment.confirmed && o.ndEndowment.fundName
-            ? GT.callout('info', '<p>Gifts designated to the <b>' + o.ndEndowment.fundName + '</b> qualify. Please note “endowment” on your gift so it is recorded correctly, and keep the Library’s acknowledgment for your ' + (kind === 'endowment' ? c.formEndowment : c.formPlanned) + '.</p>')
-            : GT.callout('warn', '<p><b>Before you count on the credit:</b> it applies only to gifts directed to a qualified endowment fund — a permanent, irrevocable fund that spends only its earnings. Please email <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a> and we will confirm how to designate your gift to the Library’s endowment so it qualifies.</p>'),
+            ? GT.callout('info', '<p>Gifts designated to the <b>' + o.ndEndowment.fundName + '</b> qualify. Please note “endowment” on your gift so it is recorded correctly, and keep {{org}}’s acknowledgment for your ' + (kind === 'endowment' ? c.formEndowment : c.formPlanned) + '.</p>')
+            : GT.callout('warn', '<p><b>Before you count on the credit:</b> it applies only to gifts directed to a qualified endowment fund — a permanent, irrevocable fund that spends only its earnings. Please email <a href="mailto:' + o.contactEmail + '">' + o.contactEmail + '</a> and we will confirm how to designate your gift to {{org}}’s endowment so it qualifies.</p>'),
           GT.section('How to claim it', h('ol.steps', [
             GT.li('Make your gift to the ' + o.name + ' and designate it for the <b>endowment</b>' + (kind === 'planned' ? ', or complete the planned gift with your advisor' : '') + '. Ask us for the <b>qualification letter</b> — the schedule requires a statement from the nonprofit that it and the fund meet N.D.C.C. § 57-38-01.21 — and keep it with your acknowledgment.'),
             GT.li('File <b>' + (kind === 'endowment' ? c.formEndowment : c.formPlanned) + '</b> with your North Dakota return' + (biz ? ' (Schedule QEC for entities)' : '') + '. The statute is ' + c.statute + '.'),
@@ -167,7 +167,7 @@
               set('l6', money0(l6)); set('l7', money0(l7)); set('l8', money0(l8)); set('l9', money0(l9));
               var page = doc.getPages()[0], font = null;
               return doc.embedFont(PDFLib.StandardFonts.HelveticaBold).then(function (fnt) {
-                page.drawText(GT.pdfSafe('DRAFT WORKSHEET — prepared with the Library’s giving tools on ' + new Date().toLocaleDateString('en-US') + '. Estimates only; review with your tax preparer before filing.'), { x: 36, y: page.getHeight() - 24, size: 8, font: fnt, color: PDFLib.rgb(0.82, 0.46, 0.34) });
+                page.drawText(GT.pdfSafe('DRAFT WORKSHEET — prepared with {{org}}’s giving tools on ' + new Date().toLocaleDateString('en-US') + '. Estimates only; review with your tax preparer before filing.'), { x: 36, y: page.getHeight() - 24, size: 8, font: fnt, color: PDFLib.rgb(0.82, 0.46, 0.34) });
                 return doc.save();
               });
             });
@@ -176,7 +176,7 @@
             var blob = new Blob([bytes], { type: 'application/pdf' }), url = URL.createObjectURL(blob);
             var a = h('a', { href: url, download: 'Schedule-ND-1QEC-' + f.formYear + '-draft.pdf' }); document.body.appendChild(a); a.click(); document.body.removeChild(a);
             setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-            wsStatus.innerHTML = 'Downloaded. Line 8 uses your <b>estimated</b> North Dakota tax (' + money(ndLiab) + '); your preparer will replace it with the actual figure and complete lines 10–16. Also attach the Library’s qualification letter.';
+            wsStatus.innerHTML = 'Downloaded. Line 8 uses your <b>estimated</b> North Dakota tax (' + money(ndLiab) + '); your preparer will replace it with the actual figure and complete lines 10–16. Also attach {{org}}’s qualification letter.';
           })
           .catch(function (e) { wsStatus.textContent = 'Sorry — the worksheet could not be prepared (' + e.message + '). Use the blank form link instead.'; })
           .then(function () { btn.disabled = false; });
