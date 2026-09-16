@@ -103,6 +103,11 @@ eq('PV annuity 7,000 @5.4% x 12y', GT.pvAnnuity(7000, 0.054, 12), 7000 * (1 - Ma
   eq('ND credit: 25k endowment gift, single → 10,000 cap', Math.min(25000 * c.rate, c.maxIndividual), 10000, 0);
   eq('ND credit: 30k gift MFJ → 12,000', Math.min(30000 * c.rate, c.maxJoint), 12000, 0);
   eq('ND credit: 4,999 gift is below minimum', 4999 < c.minGift ? 1 : 0, 1, 0);
+  var SC = T.stateCharitable, scKeys = Object.keys(SC);
+  eq('State chart: 50 states + DC', scKeys.length, 51, 0);
+  eq('State chart: every row has a valid benefit kind', scKeys.filter(function (k) { return ['none','nodeduct','federal','nonitemizer','credit'].indexOf(SC[k].benefit) < 0; }).length, 0, 0);
+  eq('State chart: no-income-tax states have zero rate', scKeys.filter(function (k) { return SC[k].benefit === 'none' && SC[k].rate !== 0; }).length, 0, 0);
+  eq('State chart: 9 states with no income tax', scKeys.filter(function (k) { return SC[k].benefit === 'none'; }).length, 9, 0);
   eq('ND credit: entity (estate) 30k gift → 10,000 cap, no minimum', Math.min(30000 * c.rate, c.maxBusiness), 10000, 0);
   eq('ND credit vs deduction: 25k at 2.5% top rate = 625', 25000 * T.ndBrackets.mfj[T.ndBrackets.mfj.length - 1][1], 625, 0);
   // ND tax on 150k MFJ taxable: (150,000 - 82,800) * 1.95% = 1,310.40

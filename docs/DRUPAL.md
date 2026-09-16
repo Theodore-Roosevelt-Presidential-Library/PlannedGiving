@@ -7,6 +7,7 @@ The tools are designed to live on the main site at **`/support/tools/<name>`**, 
 | Path alias | Title | Embed |
 |---|---|---|
 | `/support/tools/navigator` | Find the right way to give | `navigator` |
+| `/support/tools/states` | What your state does with your gift | `states` |
 | `/support/tools/ndcredit` | North Dakota's 40% tax credit | `ndcredit` |
 | `/support/tools/qcd` | Give from your IRA | `qcd` |
 | `/support/tools/stock` | Give stock instead of cash | `stock` |

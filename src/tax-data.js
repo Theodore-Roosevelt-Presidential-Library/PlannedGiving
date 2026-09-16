@@ -138,12 +138,77 @@ window.TRPL_TAX = {
   },
   stateInheritanceTax: ['KY', 'MD', 'NE', 'NJ', 'PA'],
 
+  /* --- How each state treats a charitable gift on its income tax --------- */
+  // Source: U.S. Charitable Gift Trust, "State and Local Tax Treatment of Charitable
+  // Contributions" (Jan 2026) for tax/benefit/rate; state DOR pages for the non-itemizer
+  // and credit rules (AZ, CO, MN, MA, UT, VT, WI). `rate` is the maximum state (or state+city)
+  // benefit as a share of the gift. `benefit`: none = no income tax; nodeduct = income tax but
+  // no charitable deduction; federal = follows the federal itemized deduction; nonitemizer =
+  // a benefit that does not require itemizing; credit = credit-based system. retirementExempt marks
+  // states that already exclude IRA distributions, where a QCD adds no state saving.
+  stateCharitableAsOf: 'January 2026',
+  stateCharitable: {
+    AL: { name: 'Alabama', benefit: 'federal', rate: .0315 },
+    AK: { name: 'Alaska', benefit: 'none', rate: 0 },
+    AZ: { name: 'Arizona', benefit: 'nonitemizer', rate: .025, note: 'Standard-deduction filers add 34% of their charitable gifts (2025) to the Arizona standard deduction; itemizers deduct in full, whether or not they itemize federally. Arizona’s own charitable credits apply only to Arizona organizations.' },
+    AR: { name: 'Arkansas', benefit: 'federal', rate: .037 },
+    CA: { name: 'California', benefit: 'federal', rate: .133, note: 'You can itemize on the California return even if you take the federal standard deduction. Itemized deductions phase down by 6% of AGI above about $252,000 (single), up to 80%.' },
+    CO: { name: 'Colorado', benefit: 'nonitemizer', rate: .044, note: 'Filers who take the federal standard deduction subtract their charitable gifts over $500 on the Colorado return. Itemized deductions are capped for taxpayers with AGI of $300,000 or more.' },
+    CT: { name: 'Connecticut', benefit: 'nodeduct', rate: 0 },
+    DE: { name: 'Delaware', benefit: 'federal', rate: .066 },
+    DC: { name: 'District of Columbia', benefit: 'federal', rate: .1075, note: 'Itemized deductions are reduced by 5% of AGI above $200,000.' },
+    FL: { name: 'Florida', benefit: 'none', rate: 0 },
+    GA: { name: 'Georgia', benefit: 'federal', rate: .0499 },
+    HI: { name: 'Hawaii', benefit: 'federal', rate: .11, note: 'Itemized deductions are reduced by 3% of AGI above about $167,000, up to 80%.' },
+    ID: { name: 'Idaho', benefit: 'federal', rate: .053 },
+    IL: { name: 'Illinois', benefit: 'nodeduct', rate: 0, retirementExempt: true, note: 'Illinois does not tax retirement-plan distributions, so an IRA gift has no extra state benefit here.' },
+    IN: { name: 'Indiana', benefit: 'nodeduct', rate: 0 },
+    IA: { name: 'Iowa', benefit: 'federal', rate: .038, note: 'Iowa’s Endow Iowa credit applies only to endowed funds at Iowa community foundations.' },
+    KS: { name: 'Kansas', benefit: 'federal', rate: .0558 },
+    KY: { name: 'Kentucky', benefit: 'federal', rate: .035, note: 'Kentucky’s Endow Kentucky credit applies only to Kentucky community-foundation endowments.' },
+    LA: { name: 'Louisiana', benefit: 'nodeduct', rate: 0, note: 'Since 2022 Louisiana allows excess federal itemized deductions only for medical expenses, so charitable gifts no longer reduce Louisiana tax.' },
+    ME: { name: 'Maine', benefit: 'federal', rate: .0715, note: 'Itemized deductions are capped (about $37,000) and phase out between roughly $102,000 and $333,000 of AGI.' },
+    MD: { name: 'Maryland', benefit: 'federal', rate: .0575, note: 'County income taxes add up to about 3.2%. Maryland’s Endow Maryland credit applies only to Maryland community foundations.' },
+    MA: { name: 'Massachusetts', benefit: 'nonitemizer', rate: .09, note: 'A charitable deduction is available to all filers (Massachusetts has no itemizing requirement), limited to 50% of Part B income since 2024.' },
+    MI: { name: 'Michigan', benefit: 'nodeduct', rate: 0 },
+    MN: { name: 'Minnesota', benefit: 'nonitemizer', rate: .0985, note: 'Non-itemizers subtract 50% of charitable gifts over $500. Minnesota also has its own itemized deductions, usable whether or not you itemize federally, reduced by 3% of AGI above about $239,000.' },
+    MS: { name: 'Mississippi', benefit: 'federal', rate: .04 },
+    MO: { name: 'Missouri', benefit: 'federal', rate: .047 },
+    MT: { name: 'Montana', benefit: 'federal', rate: .059, note: 'Montana’s endowment credit (40% of a planned gift, 20% of a business’s outright gift, $15,000 cap) applies only to endowments held by a Montana-formed 501(c)(3) or a Montana-based affiliate.' },
+    NE: { name: 'Nebraska', benefit: 'federal', rate: .052 },
+    NV: { name: 'Nevada', benefit: 'none', rate: 0 },
+    NH: { name: 'New Hampshire', benefit: 'none', rate: 0 },
+    NJ: { name: 'New Jersey', benefit: 'nodeduct', rate: 0 },
+    NM: { name: 'New Mexico', benefit: 'federal', rate: .059 },
+    NY: { name: 'New York', benefit: 'federal', rate: .1021, note: 'You can itemize on the New York return even if you take the federal standard deduction. New York City adds up to 3.9%. Itemized deductions are cut 50% above $1 million of AGI and 75% above $10 million.' },
+    NC: { name: 'North Carolina', benefit: 'federal', rate: .0399 },
+    ND: { name: 'North Dakota', benefit: 'federal', rate: .025, note: 'Low rates make the deduction small, but the 40% credit for endowment and planned gifts (N.D.C.C. § 57-38-01.21) is among the strongest giving incentives in the country.' },
+    OH: { name: 'Ohio', benefit: 'nodeduct', rate: 0 },
+    OK: { name: 'Oklahoma', benefit: 'federal', rate: .045 },
+    OR: { name: 'Oregon', benefit: 'federal', rate: .099, note: 'Multnomah, Clackamas, and Washington county taxes can raise the benefit to about 11–14%.' },
+    PA: { name: 'Pennsylvania', benefit: 'nodeduct', rate: 0, retirementExempt: true, note: 'Pennsylvania does not tax retirement-plan distributions after retirement age, so an IRA gift has no extra state benefit here.' },
+    RI: { name: 'Rhode Island', benefit: 'nodeduct', rate: 0 },
+    SC: { name: 'South Carolina', benefit: 'federal', rate: .0521 },
+    SD: { name: 'South Dakota', benefit: 'none', rate: 0 },
+    TN: { name: 'Tennessee', benefit: 'none', rate: 0 },
+    TX: { name: 'Texas', benefit: 'none', rate: 0 },
+    UT: { name: 'Utah', benefit: 'credit', rate: .045, note: 'Utah gives a 6% credit on federal itemized deductions, including gifts, that phases out at higher incomes.' },
+    VT: { name: 'Vermont', benefit: 'credit', rate: .05, note: 'A 5% credit on charitable gifts, on the first $20,000 given each year (maximum $1,000), whether or not you itemize.' },
+    VA: { name: 'Virginia', benefit: 'federal', rate: .0575, note: 'Itemized deductions are reduced by 3% of AGI above about $333,000, up to 80%.' },
+    WA: { name: 'Washington', benefit: 'none', rate: 0, note: 'No income tax, but Washington has an estate tax with a low exemption — see the estate tool.' },
+    WV: { name: 'West Virginia', benefit: 'nodeduct', rate: 0 },
+    WI: { name: 'Wisconsin', benefit: 'credit', rate: .05, note: 'A 5% itemized-deduction credit on charitable gifts (with other itemized deductions) above the Wisconsin standard deduction.' },
+    WY: { name: 'Wyoming', benefit: 'none', rate: 0 }
+  },
+
   sources: [
     'IRS Rev. Proc. 2025-32 (2026 inflation adjustments)',
     'Tax Foundation, 2026 Tax Brackets',
     'IRS §7520 rate table; Rev. Rul. 2026-17',
     'American Council on Gift Annuities, suggested maximum rates (reconfirmed 2025-11-07)',
     'IRS Publication 590-B, Uniform Lifetime Table',
-    'Kiplinger / TurboTax summaries of OBBBA charitable-deduction changes'
+    'Kiplinger / TurboTax summaries of OBBBA charitable-deduction changes',
+    'U.S. Charitable Gift Trust, State and Local Tax Treatment of Charitable Contributions (Jan 2026)',
+    'Arizona DOR Individual Income Tax Highlights (2025); Minnesota Schedule M1M; Colorado DR 0104AD; Montana DOR Qualified Endowment Credit'
   ]
 };

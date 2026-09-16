@@ -9,6 +9,7 @@ Every tool is one `<script>` tag. No framework, no build step on the host page, 
 | Tool | Embed file | What it does |
 |---|---|---|
 | Giving Navigator | `dist/navigator.js` | Six questions → ranked giving options with reasons, links, and advisor questions. Built for the top of `/support`. |
+| State-by-state chart | `dist/states.js` | How all 50 states + DC treat a charitable gift (no income tax / no deduction / itemizers / non-itemizer benefit / credit), top state benefit, death taxes; dropdown filters to one state with tailored guidance. |
 | ND tax credit calculator | `dist/ndcredit.js` | North Dakota's 40% credit for endowment and planned gifts (N.D.C.C. § 57-38-01.21), for individuals and for C corps, pass-throughs, trusts, and estates: credit, usable amount, carryforward, credit-vs-deduction comparison, federal interplay, net cost. |
 | IRA / QCD calculator | `dist/qcd.js` | Eligibility, RMD estimate, QCD vs. withdraw-and-give comparison. |
 | Stock gift calculator | `dist/stock.js` | Give shares vs. sell-then-give: gains avoided, deduction value, net cost. |
@@ -44,6 +45,7 @@ Tools cross-link to one another (the Navigator points to calculators, the ND cre
 | Tool | trlibrary.com page | Pages mirror |
 |---|---|---|
 | navigator | `/support/tools/navigator` | `support/tools/navigator/` |
+| states | `/support/tools/states` | `support/tools/states/` |
 | deadlines | `/support/tools/deadlines` | `support/tools/deadlines/` |
 | acknowledgments (staff) | not published on trlibrary.com | `support/tools/acknowledgments/` |
 | ndcredit | `/support/tools/ndcredit` | `support/tools/ndcredit/` |

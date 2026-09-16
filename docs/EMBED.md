@@ -72,3 +72,12 @@ The Navigator links to trlibrary.com pages defined in `src/config.js` (`urls.*`)
 ## Versioning and caching
 
 Files are served from GitHub Pages with its default cache headers. A rebuild is live within a few minutes. For a pinned version, tag a release and reference the tagged file via a CDN such as `https://cdn.jsdelivr.net/gh/Theodore-Roosevelt-Presidential-Library/PlannedGiving@v1.0.0/dist/qcd.js` — but note that pinning also freezes the tax figures.
+
+## State chart (`states`)
+
+```html
+<div data-trpl-tool="states"></div>
+<script src="https://givingtools.labs.trlibrary.com/dist/states.js" async></script>
+```
+
+Link straight to one state with `?states.st=MN` on the tool page, or set the dropdown by embedding on a page whose URL carries that parameter. Rows in the table are clickable; the category chips filter the full chart. Data lives in `src/tax-data.js` (`stateCharitable`) and is reviewed each January.

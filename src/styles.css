@@ -190,3 +190,21 @@
 .trpl-gt .trpl-tip-how { color: #D9D4C8; font-size: 13px; }
 .trpl-gt .trpl-tip-how b { color: #fff; }
 @media print { .trpl-gt .trpl-term::after { display: none; } .trpl-gt .trpl-tip { display: none; } }
+
+/* --- state chart (states tool) --- */
+.trpl-gt .trpl-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+.trpl-gt .trpl-chip { font-family: var(--trpl-font-ui); font-size: 13px; font-weight: 700; padding: 8px 14px; min-height: 36px; border-radius: 999px; border: 1px solid var(--trpl-line); background: var(--trpl-panel); color: var(--trpl-ink); cursor: pointer; }
+.trpl-gt .trpl-chip:hover { border-color: var(--trpl-deep-orange); }
+.trpl-gt .trpl-chip.trpl-on { background: var(--trpl-dark-forest); border-color: var(--trpl-dark-forest); color: #fff; }
+.trpl-gt .trpl-chip:focus-visible { outline: 3px solid rgba(231,128,93,.55); outline-offset: 2px; }
+.trpl-gt .trpl-tag { display: inline-block; font-family: var(--trpl-font-ui); font-size: 12px; font-weight: 700; letter-spacing: .02em; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--trpl-line); background: var(--trpl-panel); color: var(--trpl-ink); white-space: nowrap; }
+.trpl-gt .trpl-tag.trpl-good { border-color: var(--trpl-spring-green); background: rgba(27,70,51,.08); }
+.trpl-gt .trpl-tag.trpl-highlight { border-color: var(--trpl-deep-orange); background: rgba(231,128,93,.14); }
+.trpl-gt .trpl-tag.trpl-warn { border-color: var(--trpl-deep-orange-dark); background: #FBEFE9; color: var(--trpl-dark-gray); }
+.trpl-gt .trpl-tag.trpl-muted { color: var(--trpl-muted); }
+.trpl-gt .trpl-tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 6px 0 10px; border: 1px solid var(--trpl-line); border-radius: var(--trpl-radius); }
+.trpl-gt .trpl-tablewrap table.trpl-table tbody tr:hover { background: var(--trpl-panel); }
+.trpl-gt .trpl-stat.trpl-warn { border-top-color: var(--trpl-deep-orange-dark); }
+.trpl-gt .trpl-btn.trpl-link { border: 0; background: none; color: var(--trpl-dark-forest); text-decoration: underline; padding: 6px 0; min-height: 32px; }
+.trpl-gt .trpl-btn.trpl-link:hover { background: none; color: var(--trpl-deep-orange-dark); }
+.trpl-gt[data-theme="dark"] .trpl-btn.trpl-link { color: #fff; }

@@ -22,7 +22,7 @@ src/core.js             runtime: DOM helpers, form controls, tax helper function
 src/share.js            shareable state (URL params), pdf-lib loader, PDF builder, form filler, advisor summary, statement of intent
 src/glossary.js         plain-language definitions; auto-wraps the first mention of each term in a tooltip (add terms here; some definitions cite figures — update them in the rollover)
 src/styles.css          scoped styles, inlined into every bundle
-src/tools/<name>.js     one tool each (15 today; see README table)
+src/tools/<name>.js     one tool each (16 today; see README table)
 build.js                concatenates tax-data + config + core + share + tool -> dist/<name>.js and dist/all.js
 gen-pages.js            writes index.html, support/tools/index.html, support/tools/<name>/{index,embed}.html
 forms/                  fillable PDFs the tools pre-fill (IRS 8283, ND-1QEC, ND-1PG)
@@ -59,10 +59,11 @@ Search, in this order, and read the primary source rather than a summary wheneve
 4. **ACGA gift annuity rates.** Search `ACGA suggested maximum gift annuity rates <YEAR>` and read https://www.acga.org/current-gift-annuity-rates. Update `acga.singleLife` only if the schedule changed; always update `acga.reconfirmed`.
 5. **North Dakota.** (a) Brackets: search `North Dakota income tax brackets <YEAR>` and confirm at tax.nd.gov; update `ndBrackets`. (b) Credit rules: search `North Dakota charitable giving tax credit <YEAR>` and read https://www.tax.nd.gov/income-tax-incentives/endowment-fund-contribution-tax-credit and `/planned-gift-contribution-tax-credit`; the legislature meets in odd years, so check for bill changes to N.D.C.C. § 57-38-01.21 (rate, $5,000 minimum, $10,000/$20,000 caps, the $10,000 entity cap and which entities qualify, carryforward, qualifying gift types). Also check whether the Tax Department has clarified if the endowment and planned-gift caps are separate when both are claimed in one year — `ndCredit.capsStackingUnresolved` should become `false` and the advisor question in `ndcredit.js` can then state the rule. (c) Forms: download the new year's **Schedule ND-1QEC** and **ND-1PG** from https://www.tax.nd.gov/forms into `forms/`, update `ndForms.*.formYear/file/source`, and **re-verify field names** (see Step 3).
 6. **IRS Form 8283.** Check https://www.irs.gov/forms-pubs/about-form-8283 for a newer revision. If revised, download to `forms/irs-f8283-<rev>.pdf`, update `irsForms.f8283`, and re-verify field names.
-7. **State death taxes.** Search `states with estate tax <YEAR> exemption` and `states with inheritance tax <YEAR>`; states add, repeal, and index these annually. Update `stateEstateTax` and `stateInheritanceTax`.
-8. **IRS Uniform Lifetime Table** changes rarely (last 2022) — check only if you see news of new mortality tables.
-9. **Glossary definitions** in `src/glossary.js` quote a few figures (non-itemizer amounts, estate exemption, annual exclusion, SALT cap, RMD age). Update them to match tax-data.
-10. **Anything else the tools assert.** Grep the tools for numbers that might drift even though they are not in tax-data (they should be — move them if found): `grep -nE "\\$[0-9]|[0-9]+%" src/tools/*.js | grep -v "money(\\|pct("`.
+7. **State charitable treatment** (`stateCharitable`, `stateCharitableAsOf`). Re-read the U.S. Charitable Gift Trust “State and Local Tax Treatment of Charitable Contributions” table (published each January) and each state DOR page cited in `sources`; update `benefit`, `rate`, `note`, and `retirementExempt` where a legislature changed the rule (watch for new non-itemizer deductions — several states have bills pending — and for repeal of the Louisiana/Rhode Island/West Virginia treatment). Update `stateCharitableAsOf`.
+8. **State death taxes.** Search `states with estate tax <YEAR> exemption` and `states with inheritance tax <YEAR>`; states add, repeal, and index these annually. Update `stateEstateTax` and `stateInheritanceTax`.
+9. **IRS Uniform Lifetime Table** changes rarely (last 2022) — check only if you see news of new mortality tables.
+10. **Glossary definitions** in `src/glossary.js` quote a few figures (non-itemizer amounts, estate exemption, annual exclusion, SALT cap, RMD age). Update them to match tax-data.
+11. **Anything else the tools assert.** Grep the tools for numbers that might drift even though they are not in tax-data (they should be — move them if found): `grep -nE "\\$[0-9]|[0-9]+%" src/tools/*.js | grep -v "money(\\|pct("`.
 
 Record each source you used in `tax-data.sources`.
 
