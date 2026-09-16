@@ -1,0 +1,85 @@
+{
+  "version": "1.1.0",
+  "taxYear": "2026",
+  "built": "2026-09-16T15:29:39.187Z",
+  "tools": [
+    {
+      "name": "beneficiary",
+      "title": "Beneficiary Designation Guide",
+      "file": "dist/beneficiary.js",
+      "bytes": 49615
+    },
+    {
+      "name": "bequest",
+      "title": "Bequest Language Builder",
+      "file": "dist/bequest.js",
+      "bytes": 50710
+    },
+    {
+      "name": "bunching",
+      "title": "Bunching & Standard Deduction Comparison",
+      "file": "dist/bunching.js",
+      "bytes": 50337
+    },
+    {
+      "name": "daf",
+      "title": "Donor-Advised Fund Grant Guide",
+      "file": "dist/daf.js",
+      "bytes": 51027
+    },
+    {
+      "name": "estate",
+      "title": "Estate Tax & Charitable Bequest Estimator",
+      "file": "dist/estate.js",
+      "bytes": 49984
+    },
+    {
+      "name": "intent",
+      "title": "Letter of Intent (Heritage Society)",
+      "file": "dist/intent.js",
+      "bytes": 46455
+    },
+    {
+      "name": "lifeincome",
+      "title": "Life-Income Gift Illustrator",
+      "file": "dist/lifeincome.js",
+      "bytes": 54481
+    },
+    {
+      "name": "matching",
+      "title": "Employer Matching Gift Impact",
+      "file": "dist/matching.js",
+      "bytes": 46591
+    },
+    {
+      "name": "monthly",
+      "title": "Monthly Giving Calculator",
+      "file": "dist/monthly.js",
+      "bytes": 45649
+    },
+    {
+      "name": "navigator",
+      "title": "Giving Navigator",
+      "file": "dist/navigator.js",
+      "bytes": 59467
+    },
+    {
+      "name": "ndcredit",
+      "title": "North Dakota Charitable Giving Tax Credit",
+      "file": "dist/ndcredit.js",
+      "bytes": 56885
+    },
+    {
+      "name": "qcd",
+      "title": "IRA Qualified Charitable Distribution Calculator",
+      "file": "dist/qcd.js",
+      "bytes": 51602
+    },
+    {
+      "name": "stock",
+      "title": "Appreciated Stock Gift Calculator",
+      "file": "dist/stock.js",
+      "bytes": 52194
+    }
+  ]
+}
